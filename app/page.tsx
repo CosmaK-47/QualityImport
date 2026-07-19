@@ -1,0 +1,538 @@
+"use client";
+
+import { useMemo, useState } from "react";
+
+type Language = "RO" | "RU" | "EN";
+type Category = "all" | "outerwear" | "tops" | "bottoms" | "shoes";
+type Availability = "all" | "stock" | "preorder";
+
+type Product = {
+  id: number;
+  name: string;
+  category: Exclude<Category, "all">;
+  price: string;
+  availability: Exclude<Availability, "all">;
+  art: "jacket" | "trousers" | "shoe" | "knit" | "set" | "vest";
+  tone: "graphite" | "silver" | "chalk";
+};
+
+const products: Product[] = [
+  {
+    id: 1,
+    name: "Structured Track Jacket",
+    category: "outerwear",
+    price: "1 899 MDL",
+    availability: "stock",
+    art: "jacket",
+    tone: "graphite",
+  },
+  {
+    id: 2,
+    name: "Studio Cargo Trousers",
+    category: "bottoms",
+    price: "1 349 MDL",
+    availability: "stock",
+    art: "trousers",
+    tone: "silver",
+  },
+  {
+    id: 3,
+    name: "Court Low Sneakers",
+    category: "shoes",
+    price: "2 499 MDL",
+    availability: "preorder",
+    art: "shoe",
+    tone: "chalk",
+  },
+  {
+    id: 4,
+    name: "Noir Rib Knit",
+    category: "tops",
+    price: "949 MDL",
+    availability: "stock",
+    art: "knit",
+    tone: "chalk",
+  },
+  {
+    id: 5,
+    name: "Form Zip Set",
+    category: "outerwear",
+    price: "2 199 MDL",
+    availability: "preorder",
+    art: "set",
+    tone: "silver",
+  },
+  {
+    id: 6,
+    name: "Studio Layer Vest",
+    category: "tops",
+    price: "1 199 MDL",
+    availability: "stock",
+    art: "vest",
+    tone: "graphite",
+  },
+];
+
+const copy = {
+  RO: {
+    announcement: "Livrare în toată Moldova · Produse în stoc și precomenzi selectate",
+    navCollection: "Colecție",
+    navNew: "Noutăți",
+    navResellers: "Pentru reselleri",
+    account: "Cont",
+    bag: "Coș",
+    eyebrow: "SELECTAT PENTRU MOLDOVA",
+    heroTitle: "Modă autentică, selectată cu grijă.",
+    heroBody: "Produse verificate pentru clienți și reselleri din întreaga Moldovă.",
+    heroPrimary: "Explorează colecția",
+    heroSecondary: "Pentru reselleri",
+    trustQuality: "Calitate verificată de QI",
+    trustPrice: "Preț final transparent",
+    trustDelivery: "Livrare în toată Moldova",
+    collectionEyebrow: "PRIMA SELECȚIE",
+    collectionTitle: "Piese alese, nu un catalog fără sfârșit.",
+    collectionBody: "Fiecare produs este verificat înainte de publicare pentru calitate, cost complet și disponibilitate realistă.",
+    all: "Toate",
+    outerwear: "Jachete",
+    tops: "Topuri",
+    bottoms: "Pantaloni",
+    shoes: "Încălțăminte",
+    stockFilter: "În stoc",
+    preorderFilter: "Precomandă",
+    stock: "În stoc · 1–3 zile",
+    preorder: "Precomandă selectată",
+    inspected: "VERIFICAT QI",
+    add: "Adaugă în coș",
+    empty: "Nu există produse pentru filtrele selectate.",
+    reset: "Resetează filtrele",
+    processEyebrow: "DE LA SURSĂ LA TINE",
+    processTitle: "Un proces clar, fără promisiuni imposibile.",
+    step1Title: "Selectăm",
+    step1Body: "QI publică doar produse care trec verificarea internă de calitate, cost și origine.",
+    step2Title: "Confirmăm",
+    step2Body: "Pentru precomenzi confirmăm prețul și disponibilitatea înainte de plată.",
+    step3Title: "Livrăm",
+    step3Body: "Urmărești etapele comenzii în cont, fără expunerea rutelor noastre confidențiale.",
+    resellerEyebrow: "QI PENTRU AFACERI",
+    resellerTitle: "O selecție mai bună pentru boutique-ul tău.",
+    resellerBody: "Resellerii aprobați primesc prețuri pe nivel, cereri de ofertă și suport pentru sourcing—în aceeași platformă QI.",
+    resellerMinimum: "Comandă wholesale minimă",
+    resellerMinimumValue: "6 000 MDL",
+    resellerPrice: "Prețuri",
+    resellerPriceValue: "Starter → Strategic",
+    resellerQuote: "Oferte",
+    resellerQuoteValue: "24–72 ore",
+    apply: "Solicită cont reseller",
+    learn: "Vezi cum funcționează",
+    qualityEyebrow: "STANDARDUL QI",
+    qualityTitle: "Încrederea începe înainte de checkout.",
+    qualityBody: "Statutul de autenticitate, compoziția, mărimile și condițiile de livrare rămân informații factuale. Nu le schimbăm pentru marketing.",
+    qualityLink: "Descoperă standardul nostru",
+    support: "Suport în RO · RU · EN",
+    footerLine: "Modă selectată și importată responsabil pentru Moldova.",
+    footerShop: "Magazin",
+    footerBusiness: "Business",
+    footerHelp: "Ajutor",
+    footerLegal: "Legal",
+    rights: "© 2026 Quality Imports. Toate drepturile rezervate.",
+    added: "Produs adăugat în coș.",
+  },
+  RU: {
+    announcement: "Доставка по всей Молдове · Товары в наличии и избранный предзаказ",
+    navCollection: "Коллекция",
+    navNew: "Новинки",
+    navResellers: "Для реселлеров",
+    account: "Аккаунт",
+    bag: "Корзина",
+    eyebrow: "ОТОБРАНО ДЛЯ МОЛДОВЫ",
+    heroTitle: "Аутентичная мода, отобранная с вниманием.",
+    heroBody: "Проверенные товары для покупателей и реселлеров по всей Молдове.",
+    heroPrimary: "Смотреть коллекцию",
+    heroSecondary: "Для реселлеров",
+    trustQuality: "Качество проверено QI",
+    trustPrice: "Прозрачная итоговая цена",
+    trustDelivery: "Доставка по всей Молдове",
+    collectionEyebrow: "ПЕРВЫЙ ОТБОР",
+    collectionTitle: "Отборные вещи, а не бесконечный каталог.",
+    collectionBody: "До публикации мы проверяем качество, полную стоимость и реальную доступность каждого товара.",
+    all: "Все",
+    outerwear: "Куртки",
+    tops: "Верх",
+    bottoms: "Брюки",
+    shoes: "Обувь",
+    stockFilter: "В наличии",
+    preorderFilter: "Предзаказ",
+    stock: "В наличии · 1–3 дня",
+    preorder: "Избранный предзаказ",
+    inspected: "ПРОВЕРЕНО QI",
+    add: "Добавить в корзину",
+    empty: "Нет товаров по выбранным фильтрам.",
+    reset: "Сбросить фильтры",
+    processEyebrow: "ОТ ИСТОЧНИКА ДО ВАС",
+    processTitle: "Понятный процесс без невозможных обещаний.",
+    step1Title: "Отбираем",
+    step1Body: "QI публикует только товары, прошедшие внутреннюю проверку качества, стоимости и происхождения.",
+    step2Title: "Подтверждаем",
+    step2Body: "Для предзаказа мы подтверждаем цену и наличие до оплаты.",
+    step3Title: "Доставляем",
+    step3Body: "Этапы заказа видны в аккаунте без раскрытия наших конфиденциальных маршрутов.",
+    resellerEyebrow: "QI ДЛЯ БИЗНЕСА",
+    resellerTitle: "Более сильный ассортимент для вашего бутика.",
+    resellerBody: "Одобренные реселлеры получают уровневые цены, запросы предложений и sourcing-поддержку в одной платформе QI.",
+    resellerMinimum: "Минимальный wholesale-заказ",
+    resellerMinimumValue: "6 000 MDL",
+    resellerPrice: "Цены",
+    resellerPriceValue: "Starter → Strategic",
+    resellerQuote: "Предложения",
+    resellerQuoteValue: "24–72 часа",
+    apply: "Подать заявку реселлера",
+    learn: "Как это работает",
+    qualityEyebrow: "СТАНДАРТ QI",
+    qualityTitle: "Доверие начинается до оформления заказа.",
+    qualityBody: "Подлинность, состав, размеры и условия доставки остаются фактическими данными. Мы не меняем их ради маркетинга.",
+    qualityLink: "Изучить наш стандарт",
+    support: "Поддержка на RO · RU · EN",
+    footerLine: "Ответственно отобранная и импортированная мода для Молдовы.",
+    footerShop: "Магазин",
+    footerBusiness: "Бизнес",
+    footerHelp: "Помощь",
+    footerLegal: "Правовая информация",
+    rights: "© 2026 Quality Imports. Все права защищены.",
+    added: "Товар добавлен в корзину.",
+  },
+  EN: {
+    announcement: "Delivery across Moldova · In-stock and selected preorder",
+    navCollection: "Collection",
+    navNew: "New arrivals",
+    navResellers: "For resellers",
+    account: "Account",
+    bag: "Bag",
+    eyebrow: "CURATED FOR MOLDOVA",
+    heroTitle: "Authentic fashion, carefully selected.",
+    heroBody: "Quality-verified products for customers and resellers across Moldova.",
+    heroPrimary: "Explore the collection",
+    heroSecondary: "For resellers",
+    trustQuality: "QI quality inspected",
+    trustPrice: "Clear landed prices",
+    trustDelivery: "Delivery across Moldova",
+    collectionEyebrow: "THE FIRST SELECTION",
+    collectionTitle: "Considered pieces, not an endless catalogue.",
+    collectionBody: "Every product is reviewed before publication for quality, complete cost and realistic availability.",
+    all: "All",
+    outerwear: "Outerwear",
+    tops: "Tops",
+    bottoms: "Trousers",
+    shoes: "Shoes",
+    stockFilter: "In stock",
+    preorderFilter: "Preorder",
+    stock: "In stock · 1–3 days",
+    preorder: "Selected preorder",
+    inspected: "QI INSPECTED",
+    add: "Add to bag",
+    empty: "No products match the selected filters.",
+    reset: "Reset filters",
+    processEyebrow: "FROM SOURCE TO YOU",
+    processTitle: "A clear process without impossible promises.",
+    step1Title: "We select",
+    step1Body: "QI publishes only products that pass our internal quality, cost and origin review.",
+    step2Title: "We confirm",
+    step2Body: "For preorders, we confirm price and availability before payment.",
+    step3Title: "We deliver",
+    step3Body: "Follow each order milestone in your account without exposing our confidential routes.",
+    resellerEyebrow: "QI FOR BUSINESS",
+    resellerTitle: "A stronger selection for your boutique.",
+    resellerBody: "Approved resellers receive tiered prices, quotation tools and sourcing support in the same QI platform.",
+    resellerMinimum: "Minimum wholesale order",
+    resellerMinimumValue: "6 000 MDL",
+    resellerPrice: "Pricing",
+    resellerPriceValue: "Starter → Strategic",
+    resellerQuote: "Quotations",
+    resellerQuoteValue: "24–72 hours",
+    apply: "Apply for reseller access",
+    learn: "See how it works",
+    qualityEyebrow: "THE QI STANDARD",
+    qualityTitle: "Trust begins before checkout.",
+    qualityBody: "Authenticity status, composition, sizing and delivery terms remain factual product information. We never rewrite them for marketing.",
+    qualityLink: "Discover our standard",
+    support: "Support in RO · RU · EN",
+    footerLine: "Fashion selected and responsibly imported for Moldova.",
+    footerShop: "Shop",
+    footerBusiness: "Business",
+    footerHelp: "Help",
+    footerLegal: "Legal",
+    rights: "© 2026 Quality Imports. All rights reserved.",
+    added: "Product added to bag.",
+  },
+} as const;
+
+const categoryKeys: Category[] = ["all", "outerwear", "tops", "bottoms", "shoes"];
+
+export default function Home() {
+  const [language, setLanguage] = useState<Language>("RO");
+  const [category, setCategory] = useState<Category>("all");
+  const [availability, setAvailability] = useState<Availability>("all");
+  const [bagCount, setBagCount] = useState(0);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [statusMessage, setStatusMessage] = useState("");
+  const t = copy[language];
+
+  const visibleProducts = useMemo(
+    () =>
+      products.filter(
+        (product) =>
+          (category === "all" || product.category === category) &&
+          (availability === "all" || product.availability === availability),
+      ),
+    [category, availability],
+  );
+
+  function addToBag() {
+    setBagCount((value) => value + 1);
+    setStatusMessage(t.added);
+    window.setTimeout(() => setStatusMessage(""), 1800);
+  }
+
+  return (
+    <main>
+      <a className="skip-link" href="#collection">
+        {t.heroPrimary}
+      </a>
+
+      <div className="announcement">{t.announcement}</div>
+
+      <header className="site-header">
+        <a className="brand-lockup" href="#top" aria-label="QI Quality Imports">
+          <span className="brand-monogram">QI</span>
+          <span className="brand-name">Quality Imports</span>
+        </a>
+
+        <nav className={`primary-nav ${menuOpen ? "is-open" : ""}`} aria-label="Primary navigation">
+          <a href="#collection" onClick={() => setMenuOpen(false)}>{t.navCollection}</a>
+          <a href="#collection" onClick={() => setMenuOpen(false)}>{t.navNew}</a>
+          <a href="#resellers" onClick={() => setMenuOpen(false)}>{t.navResellers}</a>
+        </nav>
+
+        <div className="header-actions">
+          <div className="language-switcher" aria-label="Website language">
+            {(["RO", "RU", "EN"] as Language[]).map((item) => (
+              <button
+                className={language === item ? "active" : ""}
+                key={item}
+                onClick={() => setLanguage(item)}
+                aria-pressed={language === item}
+              >
+                {item}
+              </button>
+            ))}
+          </div>
+          <button className="text-action" type="button">{t.account}</button>
+          <button className="bag-action" type="button" aria-label={`${t.bag}: ${bagCount}`}>
+            {t.bag} <span>{String(bagCount).padStart(2, "0")}</span>
+          </button>
+          <button
+            className="menu-toggle"
+            type="button"
+            onClick={() => setMenuOpen((value) => !value)}
+            aria-expanded={menuOpen}
+            aria-label="Toggle navigation"
+          >
+            <span />
+            <span />
+          </button>
+        </div>
+      </header>
+
+      <section className="hero" id="top">
+        <div className="hero-copy">
+          <p className="eyebrow">{t.eyebrow}</p>
+          <h1>{t.heroTitle}</h1>
+          <p className="hero-body">{t.heroBody}</p>
+          <div className="hero-actions">
+            <a className="button button-light" href="#collection">{t.heroPrimary}</a>
+            <a className="text-link" href="#resellers">{t.heroSecondary}<span aria-hidden="true">↗</span></a>
+          </div>
+        </div>
+
+        <div className="hero-stage" aria-label="QI curated fashion presentation">
+          <div className="stage-grid" />
+          <span className="stage-label stage-label-top">QI INSPECTED</span>
+          <span className="stage-label stage-label-right">IN STOCK</span>
+          <span className="stage-label stage-label-bottom">SELECTED PREORDER</span>
+          <div className="garment garment-jacket" aria-hidden="true">
+            <span className="garment-body" />
+            <span className="garment-sleeve garment-sleeve-left" />
+            <span className="garment-sleeve garment-sleeve-right" />
+            <span className="garment-zip" />
+            <span className="garment-tag">QI</span>
+          </div>
+          <span className="stage-number">01</span>
+          <span className="stage-orbit" />
+        </div>
+      </section>
+
+      <section className="trust-strip" aria-label="QI benefits">
+        <div><span className="trust-mark">◇</span>{t.trustQuality}</div>
+        <div><span className="trust-mark">◇</span>{t.trustPrice}</div>
+        <div><span className="trust-mark">◇</span>{t.trustDelivery}</div>
+      </section>
+
+      <section className="collection-section" id="collection">
+        <div className="section-heading">
+          <div>
+            <p className="eyebrow">{t.collectionEyebrow}</p>
+            <h2>{t.collectionTitle}</h2>
+          </div>
+          <p>{t.collectionBody}</p>
+        </div>
+
+        <div className="catalogue-controls">
+          <div className="filter-group" aria-label="Product category">
+            {categoryKeys.map((key) => (
+              <button
+                key={key}
+                type="button"
+                className={category === key ? "active" : ""}
+                onClick={() => setCategory(key)}
+                aria-pressed={category === key}
+              >
+                {t[key]}
+              </button>
+            ))}
+          </div>
+          <div className="filter-group filter-group-availability" aria-label="Availability">
+            <button
+              type="button"
+              className={availability === "stock" ? "active" : ""}
+              onClick={() => setAvailability(availability === "stock" ? "all" : "stock")}
+              aria-pressed={availability === "stock"}
+            >
+              {t.stockFilter}
+            </button>
+            <button
+              type="button"
+              className={availability === "preorder" ? "active" : ""}
+              onClick={() => setAvailability(availability === "preorder" ? "all" : "preorder")}
+              aria-pressed={availability === "preorder"}
+            >
+              {t.preorderFilter}
+            </button>
+          </div>
+        </div>
+
+        {visibleProducts.length > 0 ? (
+          <div className="product-grid">
+            {visibleProducts.map((product, index) => (
+              <article className="product-card" key={product.id}>
+                <div className={`product-art art-${product.art} tone-${product.tone}`}>
+                  <span className="product-index">{String(index + 1).padStart(2, "0")}</span>
+                  <span className="product-badge">{t.inspected}</span>
+                  <span className="product-shape" aria-hidden="true" />
+                  <span className="product-line" aria-hidden="true" />
+                </div>
+                <div className="product-info">
+                  <div>
+                    <h3>{product.name}</h3>
+                    <p className={`availability availability-${product.availability}`}>
+                      {product.availability === "stock" ? t.stock : t.preorder}
+                    </p>
+                  </div>
+                  <div className="product-purchase">
+                    <strong>{product.price}</strong>
+                    <button type="button" onClick={addToBag} aria-label={`${t.add}: ${product.name}`}>+</button>
+                  </div>
+                </div>
+              </article>
+            ))}
+          </div>
+        ) : (
+          <div className="empty-state">
+            <p>{t.empty}</p>
+            <button
+              type="button"
+              className="text-link"
+              onClick={() => {
+                setCategory("all");
+                setAvailability("all");
+              }}
+            >
+              {t.reset}
+            </button>
+          </div>
+        )}
+      </section>
+
+      <section className="process-section" id="process">
+        <div className="process-intro">
+          <p className="eyebrow">{t.processEyebrow}</p>
+          <h2>{t.processTitle}</h2>
+        </div>
+        <div className="process-steps">
+          {[
+            ["01", t.step1Title, t.step1Body],
+            ["02", t.step2Title, t.step2Body],
+            ["03", t.step3Title, t.step3Body],
+          ].map(([number, title, body]) => (
+            <article key={number}>
+              <span>{number}</span>
+              <h3>{title}</h3>
+              <p>{body}</p>
+            </article>
+          ))}
+        </div>
+      </section>
+
+      <section className="reseller-section" id="resellers">
+        <div className="reseller-copy">
+          <p className="eyebrow">{t.resellerEyebrow}</p>
+          <h2>{t.resellerTitle}</h2>
+          <p>{t.resellerBody}</p>
+          <div className="reseller-actions">
+            <a className="button button-dark" href="#contact">{t.apply}</a>
+            <a className="text-link text-link-dark" href="#process">{t.learn}<span aria-hidden="true">↗</span></a>
+          </div>
+        </div>
+        <dl className="reseller-stats">
+          <div><dt>{t.resellerMinimum}</dt><dd>{t.resellerMinimumValue}</dd></div>
+          <div><dt>{t.resellerPrice}</dt><dd>{t.resellerPriceValue}</dd></div>
+          <div><dt>{t.resellerQuote}</dt><dd>{t.resellerQuoteValue}</dd></div>
+        </dl>
+      </section>
+
+      <section className="quality-section">
+        <div className="quality-art" aria-hidden="true">
+          <span className="quality-ring" />
+          <span className="quality-card"><b>QI</b><small>QUALITY / ORIGIN / COST</small></span>
+          <span className="quality-stamp">VERIFIED<br />WITH CARE</span>
+        </div>
+        <div className="quality-copy">
+          <p className="eyebrow">{t.qualityEyebrow}</p>
+          <h2>{t.qualityTitle}</h2>
+          <p>{t.qualityBody}</p>
+          <a className="text-link" href="#process">{t.qualityLink}<span aria-hidden="true">↗</span></a>
+        </div>
+      </section>
+
+      <footer className="site-footer" id="contact">
+        <div className="footer-top">
+          <a className="brand-lockup footer-brand" href="#top" aria-label="QI Quality Imports">
+            <span className="brand-monogram">QI</span>
+            <span className="brand-name">Quality Imports</span>
+          </a>
+          <p>{t.footerLine}</p>
+          <span className="support-pill">{t.support}</span>
+        </div>
+        <div className="footer-grid">
+          <div><h3>{t.footerShop}</h3><a href="#collection">{t.navCollection}</a><a href="#collection">{t.navNew}</a></div>
+          <div><h3>{t.footerBusiness}</h3><a href="#resellers">{t.navResellers}</a><a href="#resellers">Affiliate</a></div>
+          <div><h3>{t.footerHelp}</h3><a href="#contact">Website chat</a><a href="#contact">Telegram / WhatsApp</a></div>
+          <div><h3>{t.footerLegal}</h3><a href="#quality">Terms & privacy</a><a href="#quality">Returns & delivery</a></div>
+        </div>
+        <div className="footer-bottom"><span>{t.rights}</span><span>Chișinău · Moldova</span></div>
+      </footer>
+
+      <div className={`toast ${statusMessage ? "visible" : ""}`} role="status" aria-live="polite">
+        {statusMessage}
+      </div>
+    </main>
+  );
+}
