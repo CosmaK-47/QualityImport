@@ -1,77 +1,13 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { getWebsiteProducts } from "@/lib/inventory";
 
 type Language = "RO" | "RU" | "EN";
 type Category = "all" | "outerwear" | "tops" | "bottoms" | "shoes";
 type Availability = "all" | "stock" | "preorder";
 
-type Product = {
-  id: number;
-  name: string;
-  category: Exclude<Category, "all">;
-  price: string;
-  availability: Exclude<Availability, "all">;
-  art: "jacket" | "trousers" | "shoe" | "knit" | "set" | "vest";
-  tone: "graphite" | "silver" | "chalk";
-};
-
-const products: Product[] = [
-  {
-    id: 1,
-    name: "Structured Track Jacket",
-    category: "outerwear",
-    price: "1 899 MDL",
-    availability: "stock",
-    art: "jacket",
-    tone: "graphite",
-  },
-  {
-    id: 2,
-    name: "Studio Cargo Trousers",
-    category: "bottoms",
-    price: "1 349 MDL",
-    availability: "stock",
-    art: "trousers",
-    tone: "silver",
-  },
-  {
-    id: 3,
-    name: "Court Low Sneakers",
-    category: "shoes",
-    price: "2 499 MDL",
-    availability: "preorder",
-    art: "shoe",
-    tone: "chalk",
-  },
-  {
-    id: 4,
-    name: "Noir Rib Knit",
-    category: "tops",
-    price: "949 MDL",
-    availability: "stock",
-    art: "knit",
-    tone: "chalk",
-  },
-  {
-    id: 5,
-    name: "Form Zip Set",
-    category: "outerwear",
-    price: "2 199 MDL",
-    availability: "preorder",
-    art: "set",
-    tone: "silver",
-  },
-  {
-    id: 6,
-    name: "Studio Layer Vest",
-    category: "tops",
-    price: "1 199 MDL",
-    availability: "stock",
-    art: "vest",
-    tone: "graphite",
-  },
-];
+const products = getWebsiteProducts();
 
 const copy = {
   RO: {

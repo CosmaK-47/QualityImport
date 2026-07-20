@@ -1,0 +1,132 @@
+{
+  "version": 1,
+  "updatedAt": "2026-07-20T00:00:00+03:00",
+  "products": [
+    {
+      "id": "structured-track-jacket",
+      "sku": "QI-JKT-001",
+      "category": "outerwear",
+      "price": 1899,
+      "currency": "MDL",
+      "availability": "stock",
+      "stockQuantity": 5,
+      "art": "jacket",
+      "tone": "graphite",
+      "website": {
+        "enabled": true,
+        "name": "Structured Track Jacket",
+        "description": "Structured outerwear selected for everyday wear."
+      },
+      "telegram": {
+        "enabled": true,
+        "name": "Structured Track Jacket",
+        "message": "In stock now. Delivery across Moldova in 1–3 days."
+      }
+    },
+    {
+      "id": "studio-cargo-trousers",
+      "sku": "QI-TRS-002",
+      "category": "bottoms",
+      "price": 1349,
+      "currency": "MDL",
+      "availability": "stock",
+      "stockQuantity": 8,
+      "art": "trousers",
+      "tone": "silver",
+      "website": {
+        "enabled": true,
+        "name": "Studio Cargo Trousers",
+        "description": "Relaxed cargo trousers with a clean studio silhouette."
+      },
+      "telegram": {
+        "enabled": true,
+        "name": "Studio Cargo Trousers",
+        "message": "Available from stock. Ask us about sizing in Telegram."
+      }
+    },
+    {
+      "id": "court-low-sneakers",
+      "sku": "QI-SHO-003",
+      "category": "shoes",
+      "price": 2499,
+      "currency": "MDL",
+      "availability": "preorder",
+      "stockQuantity": 0,
+      "art": "shoe",
+      "tone": "chalk",
+      "website": {
+        "enabled": true,
+        "name": "Court Low Sneakers",
+        "description": "Low-profile court sneakers available through selected preorder."
+      },
+      "telegram": {
+        "enabled": true,
+        "name": "Court Low Sneakers",
+        "message": "Selected preorder. We confirm size, price and availability before payment."
+      }
+    },
+    {
+      "id": "noir-rib-knit",
+      "sku": "QI-TOP-004",
+      "category": "tops",
+      "price": 949,
+      "currency": "MDL",
+      "availability": "stock",
+      "stockQuantity": 12,
+      "art": "knit",
+      "tone": "chalk",
+      "website": {
+        "enabled": true,
+        "name": "Noir Rib Knit",
+        "description": "A refined rib knit for versatile layering."
+      },
+      "telegram": {
+        "enabled": true,
+        "name": "Noir Rib Knit",
+        "message": "In stock. Message us to confirm your size."
+      }
+    },
+    {
+      "id": "form-zip-set",
+      "sku": "QI-SET-005",
+      "category": "outerwear",
+      "price": 2199,
+      "currency": "MDL",
+      "availability": "preorder",
+      "stockQuantity": 0,
+      "art": "set",
+      "tone": "silver",
+      "website": {
+        "enabled": true,
+        "name": "Form Zip Set",
+        "description": "A coordinated zip set sourced through selected preorder."
+      },
+      "telegram": {
+        "enabled": true,
+        "name": "Form Zip Set",
+        "message": "Available by preorder after price and availability confirmation."
+      }
+    },
+    {
+      "id": "studio-layer-vest",
+      "sku": "QI-TOP-006",
+      "category": "tops",
+      "price": 1199,
+      "currency": "MDL",
+      "availability": "stock",
+      "stockQuantity": 4,
+      "art": "vest",
+      "tone": "graphite",
+      "website": {
+        "enabled": true,
+        "name": "Studio Layer Vest",
+        "description": "A structured vest designed for modern layering."
+      },
+      "telegram": {
+        "enabled": true,
+        "name": "Studio Layer Vest",
+        "message": "Limited stock available for delivery across Moldova."
+      }
+    }
+  ]
+}

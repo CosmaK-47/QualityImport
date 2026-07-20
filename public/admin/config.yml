@@ -1,0 +1,64 @@
+# Local editing works with `npx decap-server` and `local_backend: true`.
+# Replace the backend below with the production Git provider and authentication
+# settings once the inventory repository has been selected.
+backend:
+  name: test-repo
+
+local_backend: true
+publish_mode: editorial_workflow
+media_folder: public/uploads
+public_folder: /uploads
+
+collections:
+  - name: inventory
+    label: Central Inventory
+    files:
+      - name: products
+        label: Products — Website + Telegram
+        file: content/inventory.json
+        format: json
+        fields:
+          - { label: Schema version, name: version, widget: number, value_type: int, min: 1 }
+          - { label: Updated at, name: updatedAt, widget: datetime }
+          - label: Products
+            name: products
+            widget: list
+            summary: "{{fields.sku}} · {{fields.website.name}}"
+            fields:
+              - { label: Product ID, name: id, widget: string, hint: "Stable lowercase ID; do not change after publishing." }
+              - { label: SKU, name: sku, widget: string }
+              - label: Category
+                name: category
+                widget: select
+                options: [outerwear, tops, bottoms, shoes]
+              - { label: Price, name: price, widget: number, value_type: int, min: 0 }
+              - { label: Currency, name: currency, widget: select, options: [MDL], default: MDL }
+              - label: Availability
+                name: availability
+                widget: select
+                options: [stock, preorder]
+              - { label: Stock quantity, name: stockQuantity, widget: number, value_type: int, min: 0 }
+              - label: Artwork type
+                name: art
+                widget: select
+                options: [jacket, trousers, shoe, knit, set, vest]
+              - label: Artwork tone
+                name: tone
+                widget: select
+                options: [graphite, silver, chalk]
+              - label: Website
+                name: website
+                widget: object
+                collapsed: false
+                fields:
+                  - { label: Show on website, name: enabled, widget: boolean, default: true }
+                  - { label: Website name, name: name, widget: string }
+                  - { label: Website description, name: description, widget: text }
+              - label: Telegram
+                name: telegram
+                widget: object
+                collapsed: false
+                fields:
+                  - { label: Show in Telegram, name: enabled, widget: boolean, default: true }
+                  - { label: Telegram name, name: name, widget: string }
+                  - { label: Telegram message, name: message, widget: text }
