@@ -34,7 +34,7 @@ if (!token) {
 
 const copy = {
   RO: {
-    welcome: "Bine ai venit la Quality Imports. Alege ce dorești să vezi:",
+    welcome: "<b>QI / QUALITY IMPORTS</b>\nSelecție verificată pentru Moldova.\n\nAlege ce dorești să vezi:",
     chooseLanguage: "Alege limba / Выберите язык / Choose a language:",
     stock: "În stoc",
     preorder: "Precomandă",
@@ -42,11 +42,15 @@ const copy = {
     all: "Toate produsele",
     back: "Meniul principal",
     empty: "Nu există produse în această selecție.",
+    previous: "Înapoi",
+    next: "Următorul",
+    item: "Produs",
+    pieces: "bucăți disponibile",
     availability: { stock: "În stoc", preorder: "Precomandă" },
     categoryNames: { outerwear: "Jachete", tops: "Topuri", bottoms: "Pantaloni", shoes: "Încălțăminte" },
   },
   RU: {
-    welcome: "Добро пожаловать в Quality Imports. Выберите, что хотите посмотреть:",
+    welcome: "<b>QI / QUALITY IMPORTS</b>\nПроверенная подборка для Молдовы.\n\nВыберите, что хотите посмотреть:",
     chooseLanguage: "Alege limba / Выберите язык / Choose a language:",
     stock: "В наличии",
     preorder: "Предзаказ",
@@ -54,11 +58,15 @@ const copy = {
     all: "Все товары",
     back: "Главное меню",
     empty: "В этой подборке пока нет товаров.",
+    previous: "Назад",
+    next: "Далее",
+    item: "Товар",
+    pieces: "штук в наличии",
     availability: { stock: "В наличии", preorder: "Предзаказ" },
     categoryNames: { outerwear: "Куртки", tops: "Верх", bottoms: "Брюки", shoes: "Обувь" },
   },
   EN: {
-    welcome: "Welcome to Quality Imports. Choose what you would like to see:",
+    welcome: "<b>QI / QUALITY IMPORTS</b>\nQuality-verified pieces selected for Moldova.\n\nChoose what you would like to see:",
     chooseLanguage: "Alege limba / Выберите язык / Choose a language:",
     stock: "In stock",
     preorder: "Preorder",
@@ -66,6 +74,10 @@ const copy = {
     all: "All products",
     back: "Main menu",
     empty: "There are no products in this selection.",
+    previous: "Previous",
+    next: "Next",
+    item: "Product",
+    pieces: "pieces available",
     availability: { stock: "In stock", preorder: "Preorder" },
     categoryNames: { outerwear: "Outerwear", tops: "Tops", bottoms: "Trousers", shoes: "Shoes" },
   },
@@ -112,8 +124,8 @@ function mainKeyboard(language) {
       { text: `✅ ${t.stock}`, callback_data: "filter:stock" },
       { text: `🕓 ${t.preorder}`, callback_data: "filter:preorder" },
     ],
-    [{ text: `▦ ${t.categories}`, callback_data: "menu:categories" }],
-    [{ text: t.all, callback_data: "filter:all" }],
+    [{ text: `◫ ${t.categories}`, callback_data: "menu:categories" }],
+    [{ text: `✦ ${t.all}`, callback_data: "filter:all" }],
     [{ text: "RO · RU · EN", callback_data: "menu:language" }],
   ] };
 }
@@ -136,31 +148,76 @@ async function sendMessage(chatId, text, replyMarkup) {
   });
 }
 
+async function editMessage(chatId, messageId, text, replyMarkup) {
+  return telegram("editMessageText", {
+    chat_id: chatId,
+    message_id: messageId,
+    text,
+    parse_mode: "HTML",
+    disable_web_page_preview: true,
+    reply_markup: replyMarkup,
+  });
+}
+
 async function sendMainMenu(chatId, language) {
   await sendMessage(chatId, copy[language].welcome, mainKeyboard(language));
 }
 
-async function sendCatalog(chatId, language, filter) {
+function productCard(product, language, position, total) {
+  const t = copy[language];
+  const availabilityIcon = product.availability === "stock" ? "●" : "◷";
+  const quantity = product.availability === "stock"
+    ? `\n📦 <b>${product.stockQuantity}</b> ${escapeHtml(t.pieces)}`
+    : "";
+
+  return [
+    `<b>QI / QUALITY IMPORTS</b>`,
+    `<i>${escapeHtml(t.item)} ${position + 1} / ${total}</i>`,
+    "────────────",
+    `<b>${escapeHtml(product.name)}</b>`,
+    `<code>${escapeHtml(product.sku)}</code>`,
+    "",
+    escapeHtml(product.message),
+    "",
+    `💳 <b>${escapeHtml(formatPrice(product.price, product.currency))}</b>`,
+    `${availabilityIcon} ${escapeHtml(t.availability[product.availability] ?? product.availability)}${quantity}`,
+  ].join("\n");
+}
+
+function productKeyboard(language, filter, position, total) {
+  const t = copy[language];
+  const previous = (position - 1 + total) % total;
+  const next = (position + 1) % total;
+  return { inline_keyboard: [
+    [
+      { text: `‹ ${t.previous}`, callback_data: `product:${filter}:${previous}` },
+      { text: `${position + 1} / ${total}`, callback_data: "noop:page" },
+      { text: `${t.next} ›`, callback_data: `product:${filter}:${next}` },
+    ],
+    [{ text: `← ${t.back}`, callback_data: "menu:main" }],
+  ] };
+}
+
+async function showCatalog(chatId, language, filter, requestedPosition = 0, messageId) {
   const t = copy[language];
   const products = selectProducts(await fetchProducts(), filter);
   if (!products.length) {
-    await sendMessage(chatId, t.empty, mainKeyboard(language));
+    if (messageId) {
+      await editMessage(chatId, messageId, t.empty, mainKeyboard(language));
+    } else {
+      await sendMessage(chatId, t.empty, mainKeyboard(language));
+    }
     return;
   }
 
-  for (const product of products) {
-    const quantity = product.availability === "stock" ? `\n📦 ${product.stockQuantity}` : "";
-    const text = [
-      `<b>${escapeHtml(product.name)}</b>`,
-      `<code>${escapeHtml(product.sku)}</code>`,
-      `\n${escapeHtml(product.message)}`,
-      `\n<b>${escapeHtml(formatPrice(product.price, product.currency))}</b>`,
-      `${escapeHtml(t.availability[product.availability] ?? product.availability)}${quantity}`,
-    ].join("\n");
-    await sendMessage(chatId, text);
+  const position = Math.min(Math.max(Number(requestedPosition) || 0, 0), products.length - 1);
+  const text = productCard(products[position], language, position, products.length);
+  const keyboard = productKeyboard(language, filter, position, products.length);
+  if (messageId) {
+    await editMessage(chatId, messageId, text, keyboard);
+  } else {
+    await sendMessage(chatId, text, keyboard);
   }
-
-  await sendMessage(chatId, t.back, mainKeyboard(language));
 }
 
 async function handleMessage(message) {
@@ -171,7 +228,7 @@ async function handleMessage(message) {
   if (command === "/start" || command === "/language") {
     await sendMessage(chatId, copy[language].chooseLanguage, languageKeyboard());
   } else if (command === "/stock") {
-    await sendCatalog(chatId, language, "stock");
+    await showCatalog(chatId, language, "stock");
   } else if (command === "/categories") {
     await sendMessage(chatId, copy[language].categories, categoryKeyboard(language));
   } else if (command === "/help") {
@@ -185,18 +242,22 @@ async function handleCallback(callback) {
   const chatId = callback.message?.chat.id;
   if (!chatId) return;
   await telegram("answerCallbackQuery", { callback_query_id: callback.id });
-  const [action, value] = callback.data.split(":", 2);
+  const [action, value, detail] = callback.data.split(":");
   const language = userLanguages.get(chatId) ?? "RO";
 
   if (action === "lang" && copy[value]) {
     userLanguages.set(chatId, value);
     await sendMainMenu(chatId, value);
   } else if (action === "filter") {
-    await sendCatalog(chatId, language, value);
+    await showCatalog(chatId, language, value);
+  } else if (action === "product") {
+    await showCatalog(chatId, language, value, detail, callback.message.message_id);
   } else if (callback.data === "menu:categories") {
     await sendMessage(chatId, copy[language].categories, categoryKeyboard(language));
   } else if (callback.data === "menu:language") {
     await sendMessage(chatId, copy[language].chooseLanguage, languageKeyboard());
+  } else if (action === "noop") {
+    return;
   } else {
     await sendMainMenu(chatId, language);
   }
