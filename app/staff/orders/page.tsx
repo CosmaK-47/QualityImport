@@ -31,9 +31,11 @@ function dateTime(value: string) {
   return new Intl.DateTimeFormat("ro-MD", { dateStyle: "medium", timeStyle: "short", timeZone: "Europe/Chisinau" }).format(new Date(value));
 }
 
-export default async function StaffOrdersPage() {
+export default async function StaffOrdersPage({ searchParams }: { searchParams: Promise<{ source?: string }> }) {
   const user = await requireChatGPTUser("/staff/orders");
   const role = await getStaffRole(user.email);
+  const requestedSource = (await searchParams).source;
+  const activeSource = requestedSource === "telegram" || requestedSource === "website" ? requestedSource : "all";
 
   if (!role) {
     return (
@@ -47,10 +49,11 @@ export default async function StaffOrdersPage() {
     );
   }
 
-  const orders = await listOrders();
-  const telegramCount = orders.filter((order) => order.source === "telegram").length;
-  const paidCount = orders.filter((order) => order.payment_status === "paid").length;
-  const awaitingCount = orders.filter((order) => order.payment_status === "awaiting_payment").length;
+  const allOrders = await listOrders();
+  const orders = activeSource === "all" ? allOrders : allOrders.filter((order) => order.source === activeSource);
+  const telegramCount = allOrders.filter((order) => order.source === "telegram").length;
+  const paidCount = allOrders.filter((order) => order.payment_status === "paid").length;
+  const awaitingCount = allOrders.filter((order) => order.payment_status === "awaiting_payment").length;
 
   return (
     <main className={styles.shell}>
@@ -71,10 +74,14 @@ export default async function StaffOrdersPage() {
       <section className={styles.orders}>
         <div className={styles.toolbar}>
           <h2>Recent orders</h2>
-          <div><button className={styles.active}>All</button><button>Telegram</button><button>Website</button></div>
+          <nav aria-label="Filter orders by source">
+            <a className={activeSource === "all" ? styles.active : ""} href="/staff/orders">All</a>
+            <a className={activeSource === "telegram" ? styles.active : ""} href="/staff/orders?source=telegram">Telegram</a>
+            <a className={activeSource === "website" ? styles.active : ""} href="/staff/orders?source=website">Website</a>
+          </nav>
         </div>
         {orders.length === 0 ? (
-          <div className={styles.empty}><span>00</span><h3>No orders yet</h3><p>Confirmed Telegram and website orders will appear here automatically.</p></div>
+          <div className={styles.empty}><span>00</span><h3>No {activeSource === "all" ? "" : `${activeSource} `}orders found</h3><p>{activeSource === "all" ? "Telegram and website orders will appear here automatically." : "Choose another filter to review the remaining orders."}</p></div>
         ) : (
           <div className={styles.tableWrap}>
             <table>
