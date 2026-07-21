@@ -1,5 +1,6 @@
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
+import { env } from "cloudflare:workers";
 
 export type ChatGPTUser = {
   displayName: string;
@@ -19,7 +20,17 @@ const CALLBACK_PATH = "/callback";
 export async function getChatGPTUser(): Promise<ChatGPTUser | null> {
   const requestHeaders = await headers();
   const email = requestHeaders.get(USER_EMAIL_HEADER);
-  if (!email) return null;
+  if (!email) {
+    const developmentEmail = import.meta.env.DEV
+      ? (env as unknown as Record<string, unknown>).DEV_STAFF_EMAIL
+      : null;
+    if (typeof developmentEmail !== "string" || !developmentEmail.includes("@")) return null;
+    return {
+      displayName: "Local staff preview",
+      email: developmentEmail.trim().toLowerCase(),
+      fullName: null,
+    };
+  }
 
   const encodedFullName = requestHeaders.get(USER_FULL_NAME_HEADER);
   const fullName =
