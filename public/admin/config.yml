@@ -5,8 +5,8 @@ backend:
 
 local_backend: true
 publish_mode: editorial_workflow
-media_folder: public/uploads
-public_folder: /uploads
+media_folder: public/uploads/products
+public_folder: /uploads/products
 
 collections:
   - name: inventory
@@ -26,6 +26,11 @@ collections:
             fields:
               - { label: Product ID, name: id, widget: string, hint: "Stable lowercase ID; do not change after publishing." }
               - { label: SKU, name: sku, widget: string }
+              - label: Product image
+                name: image
+                widget: image
+                required: false
+                hint: "Used by both the website and Telegram. Recommended: square or 4:5 JPG/WebP."
               - label: Category
                 name: category
                 widget: select

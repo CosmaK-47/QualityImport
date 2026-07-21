@@ -5,6 +5,7 @@
     {
       "id": "structured-track-jacket",
       "sku": "QI-JKT-001",
+      "image": "",
       "category": "outerwear",
       "price": 1899,
       "currency": "MDL",
@@ -26,6 +27,7 @@
     {
       "id": "studio-cargo-trousers",
       "sku": "QI-TRS-002",
+      "image": "",
       "category": "bottoms",
       "price": 1349,
       "currency": "MDL",
@@ -47,6 +49,7 @@
     {
       "id": "court-low-sneakers",
       "sku": "QI-SHO-003",
+      "image": "",
       "category": "shoes",
       "price": 2499,
       "currency": "MDL",
@@ -68,6 +71,7 @@
     {
       "id": "noir-rib-knit",
       "sku": "QI-TOP-004",
+      "image": "",
       "category": "tops",
       "price": 949,
       "currency": "MDL",
@@ -89,6 +93,7 @@
     {
       "id": "form-zip-set",
       "sku": "QI-SET-005",
+      "image": "",
       "category": "outerwear",
       "price": 2199,
       "currency": "MDL",
@@ -110,6 +115,7 @@
     {
       "id": "studio-layer-vest",
       "sku": "QI-TOP-006",
+      "image": "",
       "category": "tops",
       "price": 1199,
       "currency": "MDL",

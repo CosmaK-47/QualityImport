@@ -8,6 +8,7 @@ export type ProductTone = "graphite" | "silver" | "chalk";
 export type InventoryProduct = {
   id: string;
   sku: string;
+  image?: string;
   category: Category;
   price: number;
   currency: "MDL";
@@ -43,6 +44,7 @@ export function getWebsiteProducts() {
     .map((product) => ({
       id: product.id,
       sku: product.sku,
+      image: product.image || null,
       name: product.website.name,
       description: product.website.description,
       category: product.category,
@@ -60,6 +62,7 @@ export function getTelegramProducts() {
     .map((product) => ({
       id: product.id,
       sku: product.sku,
+      image: product.image || null,
       name: product.telegram.name,
       message: product.telegram.message,
       category: product.category,

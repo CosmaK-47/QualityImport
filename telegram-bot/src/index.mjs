@@ -1,5 +1,5 @@
 import { readFile } from "node:fs/promises";
-import { resolve } from "node:path";
+import { basename, extname, resolve } from "node:path";
 import { categories, escapeHtml, formatPrice, selectProducts } from "./catalog.mjs";
 
 async function loadLocalEnvironment() {
@@ -101,6 +101,24 @@ async function telegram(method, payload = {}, timeoutMs = 15000) {
   return result.result;
 }
 
+async function telegramMultipart(method, fields, fileName, fileContents, mimeType) {
+  const form = new FormData();
+  for (const [key, value] of Object.entries(fields)) {
+    form.set(key, typeof value === "string" ? value : JSON.stringify(value));
+  }
+  form.set("photo", new Blob([fileContents], { type: mimeType }), fileName);
+  const response = await fetch(`https://api.telegram.org/bot${token}/${method}`, {
+    method: "POST",
+    body: form,
+    signal: AbortSignal.timeout(30000),
+  });
+  const result = await response.json();
+  if (!response.ok || !result.ok) {
+    throw new Error(result.description ?? `Telegram ${method} failed with ${response.status}`);
+  }
+  return result.result;
+}
+
 async function fetchProducts() {
   const response = await fetch(inventoryUrl, { signal: AbortSignal.timeout(10000) });
   if (!response.ok) throw new Error(`Inventory request failed with ${response.status}`);
@@ -159,6 +177,36 @@ async function editMessage(chatId, messageId, text, replyMarkup) {
   });
 }
 
+function imageMimeType(filePath) {
+  const extension = extname(filePath).toLowerCase();
+  if (extension === ".png") return "image/png";
+  if (extension === ".webp") return "image/webp";
+  return "image/jpeg";
+}
+
+async function sendPhotoCard(chatId, image, caption, replyMarkup) {
+  const fields = {
+    chat_id: String(chatId),
+    caption,
+    parse_mode: "HTML",
+    reply_markup: replyMarkup,
+  };
+
+  if (/^https?:\/\//i.test(image)) {
+    return telegram("sendPhoto", { ...fields, photo: image }, 30000);
+  }
+
+  const inventoryOrigin = new URL(inventoryUrl).origin;
+  if (!inventoryOrigin.includes("localhost") && !inventoryOrigin.includes("127.0.0.1")) {
+    return telegram("sendPhoto", { ...fields, photo: new URL(image, inventoryOrigin).href }, 30000);
+  }
+
+  const relativeImage = image.replace(/^\/+/, "");
+  const localPath = resolve(process.cwd(), "..", "public", relativeImage);
+  const contents = await readFile(localPath);
+  return telegramMultipart("sendPhoto", fields, basename(localPath), contents, imageMimeType(localPath));
+}
+
 async function sendMainMenu(chatId, language) {
   await sendMessage(chatId, copy[language].welcome, mainKeyboard(language));
 }
@@ -214,10 +262,22 @@ async function showCatalog(chatId, language, filter, requestedPosition = 0, mess
   const text = productCard(products[position], language, position, products.length);
   const keyboard = productKeyboard(language, filter, position, products.length);
   if (messageId) {
-    await editMessage(chatId, messageId, text, keyboard);
-  } else {
-    await sendMessage(chatId, text, keyboard);
+    try {
+      await telegram("deleteMessage", { chat_id: chatId, message_id: messageId });
+    } catch (error) {
+      console.error(`Could not replace the previous product card: ${error.message}`);
+    }
   }
+
+  if (products[position].image) {
+    try {
+      await sendPhotoCard(chatId, products[position].image, text, keyboard);
+      return;
+    } catch (error) {
+      console.error(`Could not send image for ${products[position].sku}: ${error.message}. Sending text card instead.`);
+    }
+  }
+  await sendMessage(chatId, text, keyboard);
 }
 
 async function handleMessage(message) {
