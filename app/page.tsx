@@ -72,6 +72,21 @@ const copy = {
     footerLegal: "Legal",
     rights: "© 2026 Quality Imports. Toate drepturile rezervate.",
     added: "Produs adăugat în coș.",
+    checkoutTitle: "Finalizează comanda",
+    checkoutSection: "LIVRARE",
+    deliveryDetails: "Date de contact și livrare",
+    checkoutHelp: "Completează datele de mai jos, iar echipa noastră îți va confirma comanda.",
+    fullName: "Nume complet",
+    fullNamePlaceholder: "Ex: Maria Popescu",
+    emailLabel: "Email",
+    phoneLabel: "Telefon",
+    deliveryLabel: "Adresă de livrare sau detalii pentru ridicare",
+    deliveryPlaceholder: "Oraș, stradă, număr și apartament sau punct de ridicare",
+    placeOrder: "Plasează comanda",
+    placingOrder: "Se plasează…",
+    secureCheckout: "Prețul și stocul sunt verificate înainte de confirmare.",
+    emptyBag: "Coșul este gol.",
+    continueShopping: "Continuă cumpărăturile",
   },
   RU: {
     announcement: "Доставка по всей Молдове · Товары в наличии и избранный предзаказ",
@@ -135,6 +150,21 @@ const copy = {
     footerLegal: "Правовая информация",
     rights: "© 2026 Quality Imports. Все права защищены.",
     added: "Товар добавлен в корзину.",
+    checkoutTitle: "Оформление заказа",
+    checkoutSection: "ДОСТАВКА",
+    deliveryDetails: "Контактные данные и доставка",
+    checkoutHelp: "Заполните данные ниже, и наша команда подтвердит ваш заказ.",
+    fullName: "Имя и фамилия",
+    fullNamePlaceholder: "Например: Мария Попеску",
+    emailLabel: "Электронная почта",
+    phoneLabel: "Телефон",
+    deliveryLabel: "Адрес доставки или информация для самовывоза",
+    deliveryPlaceholder: "Город, улица, дом, квартира или пункт самовывоза",
+    placeOrder: "Оформить заказ",
+    placingOrder: "Оформляем…",
+    secureCheckout: "Цена и наличие проверяются перед подтверждением.",
+    emptyBag: "Корзина пуста.",
+    continueShopping: "Продолжить покупки",
   },
   EN: {
     announcement: "Delivery across Moldova · In-stock and selected preorder",
@@ -198,6 +228,21 @@ const copy = {
     footerLegal: "Legal",
     rights: "© 2026 Quality Imports. All rights reserved.",
     added: "Product added to bag.",
+    checkoutTitle: "Complete your order",
+    checkoutSection: "DELIVERY",
+    deliveryDetails: "Contact and delivery details",
+    checkoutHelp: "Complete the details below and our team will confirm your order.",
+    fullName: "Full name",
+    fullNamePlaceholder: "Example: Maria Popescu",
+    emailLabel: "Email",
+    phoneLabel: "Phone",
+    deliveryLabel: "Delivery address or pickup details",
+    deliveryPlaceholder: "City, street, building, apartment or pickup point",
+    placeOrder: "Place order",
+    placingOrder: "Placing order…",
+    secureCheckout: "Price and stock are verified before confirmation.",
+    emptyBag: "Your bag is empty.",
+    continueShopping: "Continue shopping",
   },
 } as const;
 
@@ -510,18 +555,18 @@ export default function Home() {
 
       <div className={`bag-backdrop ${bagOpen ? "visible" : ""}`} onClick={() => setBagOpen(false)} />
       <aside className={`bag-drawer ${bagOpen ? "open" : ""}`} aria-hidden={!bagOpen} aria-label="Shopping bag">
-        <div className="bag-drawer-head"><div><p>QI / CHECKOUT</p><h2>{t.bag}</h2></div><button type="button" onClick={() => setBagOpen(false)} aria-label="Close bag">×</button></div>
-        {selectedBagItems.length === 0 ? <div className="bag-empty"><span>00</span><h3>Your bag is empty.</h3><button type="button" onClick={() => setBagOpen(false)}>Continue shopping</button></div> : <>
+        <div className="bag-drawer-head"><div><p>QI / CHECKOUT</p><h2>{t.checkoutTitle}</h2></div><button type="button" onClick={() => setBagOpen(false)} aria-label="Close bag">×</button></div>
+        {selectedBagItems.length === 0 ? <div className="bag-empty"><span>00</span><h3>{t.emptyBag}</h3><button type="button" onClick={() => setBagOpen(false)}>{t.continueShopping}</button></div> : <>
           <div className="bag-lines">{selectedBagItems.map((item) => <article key={item.id}><div><b>{item.name}</b><small>{item.sku} · {item.price}</small></div><div className="bag-quantity"><button type="button" onClick={() => changeQuantity(item.id, -1)}>−</button><span>{item.quantity}</span><button type="button" onClick={() => changeQuantity(item.id, 1)}>+</button></div></article>)}</div>
           <form className="checkout-form" onSubmit={submitCheckout}>
-            <h3>Delivery details</h3>
-            <label>Full name<input name="customerName" required minLength={2} autoComplete="name" /></label>
-            <div><label>Email<input name="email" type="email" required autoComplete="email" /></label><label>Phone<input name="phone" required minLength={6} autoComplete="tel" /></label></div>
-            <label>Delivery address or pickup details<textarea name="delivery" required minLength={4} rows={3} /></label>
+            <div className="checkout-intro"><span>01 / {t.checkoutSection}</span><h3>{t.deliveryDetails}</h3><p>{t.checkoutHelp}</p></div>
+            <label>{t.fullName}<input name="customerName" required minLength={2} autoComplete="name" placeholder={t.fullNamePlaceholder} /></label>
+            <div><label>{t.emailLabel}<input name="email" type="email" required autoComplete="email" placeholder="name@example.com" /></label><label>{t.phoneLabel}<input name="phone" required minLength={6} autoComplete="tel" placeholder="+373 60 000 000" /></label></div>
+            <label>{t.deliveryLabel}<textarea name="delivery" required minLength={4} rows={2} placeholder={t.deliveryPlaceholder} /></label>
             <label className="checkout-trap" aria-hidden="true">Company<input name="company" tabIndex={-1} autoComplete="off" /></label>
             {checkoutResult && <p className="checkout-result" role="status">{checkoutResult}</p>}
-            <button className="checkout-submit" disabled={checkoutBusy}>{checkoutBusy ? "Placing order…" : "Place order"}</button>
-            <small>Prices and stock are verified securely when the order is placed.</small>
+            <button className="checkout-submit" disabled={checkoutBusy}>{checkoutBusy ? t.placingOrder : t.placeOrder}</button>
+            <small>✓ {t.secureCheckout}</small>
           </form>
         </>}
       </aside>
