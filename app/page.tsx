@@ -88,7 +88,8 @@ const copy = {
     emptyBag: "Coșul este gol.",
     continueShopping: "Continuă cumpărăturile",
     redirectingPayment: "Te redirecționăm către plata securizată…",
-    paymentSetupRequired: "Comanda a fost salvată, dar plata online nu este activată încă. Echipa QI nu va expedia comanda înainte de plată.",
+    reservationTitle: "Rezervarea a fost primită",
+    reservationBody: "Echipa QI va confirma disponibilitatea și îți va trimite instrucțiunile de plată. Produsul nu va fi expediat înainte de confirmarea plății.",
     marketingConsent: "Sunt de acord să primesc prin email noutăți și oferte QI. Opțional; datele comenzii sunt păstrate separat pentru procesarea acesteia.",
   },
   RU: {
@@ -169,7 +170,8 @@ const copy = {
     emptyBag: "Корзина пуста.",
     continueShopping: "Продолжить покупки",
     redirectingPayment: "Перенаправляем на защищённую оплату…",
-    paymentSetupRequired: "Заказ сохранён, но онлайн-оплата ещё не активирована. Команда QI не отправит заказ до оплаты.",
+    reservationTitle: "Заявка на резервирование получена",
+    reservationBody: "Команда QI подтвердит наличие и отправит инструкции для оплаты. Товар не будет отправлен до подтверждения оплаты.",
     marketingConsent: "Я согласен получать новости и предложения QI по электронной почте. Необязательно; данные заказа хранятся отдельно для его обработки.",
   },
   EN: {
@@ -250,7 +252,8 @@ const copy = {
     emptyBag: "Your bag is empty.",
     continueShopping: "Continue shopping",
     redirectingPayment: "Redirecting you to secure payment…",
-    paymentSetupRequired: "The order was saved, but online payment is not active yet. The QI team will not ship it before payment.",
+    reservationTitle: "Reservation received",
+    reservationBody: "The QI team will confirm availability and send payment instructions. The product will not be shipped before payment is confirmed.",
     marketingConsent: "I agree to receive QI news and offers by email. Optional; order details are stored separately to process the order.",
   },
 } as const;
@@ -267,6 +270,7 @@ export default function Home() {
   const [bagOpen, setBagOpen] = useState(false);
   const [checkoutBusy, setCheckoutBusy] = useState(false);
   const [checkoutResult, setCheckoutResult] = useState("");
+  const [completedOrder, setCompletedOrder] = useState("");
   const [menuOpen, setMenuOpen] = useState(false);
   const [statusMessage, setStatusMessage] = useState("");
   const t = copy[language];
@@ -357,9 +361,14 @@ export default function Home() {
         window.location.assign(result.checkoutUrl);
         return;
       }
-      setCheckoutResult(t.paymentSetupRequired);
+      setBagItems({}); formElement.reset(); setCompletedOrder(String(result.orderNumber));
     } else setCheckoutResult(result.error ?? "The order could not be placed.");
     setCheckoutBusy(false);
+  }
+
+  function closeBag() {
+    setBagOpen(false);
+    if (completedOrder) setCompletedOrder("");
   }
 
   return (
@@ -604,10 +613,10 @@ export default function Home() {
         {statusMessage}
       </div>
 
-      <div className={`bag-backdrop ${bagOpen ? "visible" : ""}`} onClick={() => setBagOpen(false)} />
+      <div className={`bag-backdrop ${bagOpen ? "visible" : ""}`} onClick={closeBag} />
       <aside className={`bag-drawer ${bagOpen ? "open" : ""}`} aria-hidden={!bagOpen} aria-label="Shopping bag">
-        <div className="bag-drawer-head"><div><p>QI / CHECKOUT</p><h2>{t.checkoutTitle}</h2></div><button type="button" onClick={() => setBagOpen(false)} aria-label="Close bag">×</button></div>
-        {selectedBagItems.length === 0 ? <div className="bag-empty"><span>00</span><h3>{t.emptyBag}</h3><button type="button" onClick={() => setBagOpen(false)}>{t.continueShopping}</button></div> : <>
+        <div className="bag-drawer-head"><div><p>QI / CHECKOUT</p><h2>{t.checkoutTitle}</h2></div><button type="button" onClick={closeBag} aria-label="Close bag">×</button></div>
+        {completedOrder ? <div className="bag-empty bag-complete"><span>✓ RESERVED</span><h3>{t.reservationTitle}</h3><b>{completedOrder}</b><p>{t.reservationBody}</p><button type="button" onClick={closeBag}>{t.continueShopping}</button></div> : selectedBagItems.length === 0 ? <div className="bag-empty"><span>00</span><h3>{t.emptyBag}</h3><button type="button" onClick={closeBag}>{t.continueShopping}</button></div> : <>
           <div className="bag-lines">{selectedBagItems.map((item) => <article key={item.id}><div><b>{item.name}</b><small>{item.sku} · {item.price}</small></div><div className="bag-quantity"><button type="button" onClick={() => changeQuantity(item.id, -1)}>−</button><span>{item.quantity}</span><button type="button" onClick={() => changeQuantity(item.id, 1)}>+</button></div></article>)}</div>
           <form className="checkout-form" onSubmit={submitCheckout}>
             <div className="checkout-intro"><span>01 / {t.checkoutSection}</span><h3>{t.deliveryDetails}</h3><p>{t.checkoutHelp}</p></div>

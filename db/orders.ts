@@ -285,6 +285,7 @@ export async function markOrderPaid(input: {
   reference: string;
   paymentMethod?: string | null;
   paidAt: string;
+  actor?: string;
 }) {
   await ensureOrdersSchema();
   const current = await d1().prepare("SELECT payment_status FROM orders WHERE id = ? LIMIT 1")
@@ -298,9 +299,44 @@ export async function markOrderPaid(input: {
       .bind(input.provider, input.reference, input.paymentMethod ?? null, input.paidAt, now, input.orderId),
     d1().prepare(`INSERT INTO order_events (id, order_id, event, actor, created_at)
       VALUES (?, ?, 'payment_confirmed', ?, ?)`)
-      .bind(crypto.randomUUID(), input.orderId, input.provider, now),
+      .bind(crypto.randomUUID(), input.orderId, input.actor ?? input.provider, now),
   ]);
   return true;
+}
+
+export async function getOrderWorkflow(orderId: string) {
+  await ensureOrdersSchema();
+  return d1().prepare("SELECT id, status, payment_status FROM orders WHERE id = ? LIMIT 1")
+    .bind(orderId).first<{ id: string; status: OrderStatus; payment_status: PaymentStatus }>();
+}
+
+export async function updateOrderStatus(input: {
+  orderId: string;
+  status: OrderStatus;
+  actor: string;
+}) {
+  await ensureOrdersSchema();
+  const now = new Date().toISOString();
+  await d1().batch([
+    d1().prepare("UPDATE orders SET status = ?, updated_at = ? WHERE id = ?")
+      .bind(input.status, now, input.orderId),
+    d1().prepare(`INSERT INTO order_events (id, order_id, event, actor, created_at)
+      VALUES (?, ?, ?, ?, ?)`)
+      .bind(crypto.randomUUID(), input.orderId, `status_${input.status}`, input.actor, now),
+  ]);
+}
+
+export async function markPaymentRequested(input: { orderId: string; actor: string }) {
+  await ensureOrdersSchema();
+  const now = new Date().toISOString();
+  await d1().batch([
+    d1().prepare(`UPDATE orders SET payment_status = 'awaiting_payment',
+      payment_provider = 'manual', updated_at = ? WHERE id = ?`)
+      .bind(now, input.orderId),
+    d1().prepare(`INSERT INTO order_events (id, order_id, event, actor, created_at)
+      VALUES (?, ?, 'manual_payment_requested', ?, ?)`)
+      .bind(crypto.randomUUID(), input.orderId, input.actor, now),
+  ]);
 }
 
 export async function listOrders() {

@@ -831,3 +831,25 @@ a:focus-visible {
   margin: 0;
   accent-color: #171713;
 }
+
+.bag-drawer .bag-complete {
+  max-width: 480px;
+}
+
+.bag-drawer .bag-complete > span {
+  color: #317044;
+  font-weight: 800;
+}
+
+.bag-drawer .bag-complete > b {
+  display: block;
+  margin: 12px 0 18px;
+  font-family: var(--sans);
+  font-size: 16px;
+  letter-spacing: .08em;
+}
+
+.bag-drawer .bag-complete > p {
+  color: #56524b;
+  line-height: 1.6;
+}

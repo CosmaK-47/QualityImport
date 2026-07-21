@@ -1,6 +1,7 @@
 import { chatGPTSignOutPath, requireChatGPTUser } from "@/app/chatgpt-auth";
 import { getStaffRole, listOrders } from "@/db/orders";
 import styles from "./staff-orders.module.css";
+import OrderActions from "./order-actions";
 
 export const dynamic = "force-dynamic";
 
@@ -14,7 +15,7 @@ const statusLabels: Record<string, string> = {
 };
 
 const paymentLabels: Record<string, string> = {
-  setup_required: "Setup required",
+  setup_required: "Payment instructions needed",
   awaiting_payment: "Awaiting payment",
   paid: "Paid",
   failed: "Payment failed",
@@ -77,7 +78,7 @@ export default async function StaffOrdersPage() {
         ) : (
           <div className={styles.tableWrap}>
             <table>
-              <thead><tr><th>Order</th><th>Source</th><th>Customer</th><th>Product</th><th>Total</th><th>Payment</th><th>Fulfilment</th><th>Placed</th></tr></thead>
+              <thead><tr><th>Order</th><th>Source</th><th>Customer</th><th>Product</th><th>Total</th><th>Payment</th><th>Fulfilment</th><th>Placed</th><th>Next action</th></tr></thead>
               <tbody>{orders.map((order) => (
                 <tr key={String(order.id)}>
                   <td><b>{String(order.order_number)}</b><small>{String(order.sku)}</small></td>
@@ -88,6 +89,7 @@ export default async function StaffOrdersPage() {
                   <td><span className={`${styles.payment} ${styles[`payment_${String(order.payment_status)}`]}`}>{paymentLabels[String(order.payment_status)] ?? String(order.payment_status)}</span><small>{order.payment_method ? String(order.payment_method) : order.payment_provider ? String(order.payment_provider) : "Not connected"}</small><small>Email: {String(order.confirmation_email_status)}</small></td>
                   <td><span className={`${styles.status} ${styles[`status_${String(order.status)}`]}`}>{statusLabels[String(order.status)] ?? String(order.status)}</span></td>
                   <td><span>{dateTime(String(order.created_at))}</span></td>
+                  <td><OrderActions orderId={String(order.id)} orderNumber={String(order.order_number)} status={String(order.status)} paymentStatus={String(order.payment_status)} canManagePayment={role === "admin" || role === "moderator"} /></td>
                 </tr>
               ))}</tbody>
             </table>
