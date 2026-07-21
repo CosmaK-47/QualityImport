@@ -70,6 +70,8 @@ const copy = {
     footerBusiness: "Business",
     footerHelp: "Ajutor",
     footerLegal: "Legal",
+    termsLink: "Termeni și condiții",
+    privacyLink: "Confidențialitate",
     rights: "© 2026 Quality Imports. Toate drepturile rezervate.",
     added: "Produs adăugat în coș.",
     checkoutTitle: "Finalizează comanda",
@@ -152,6 +154,8 @@ const copy = {
     footerBusiness: "Бизнес",
     footerHelp: "Помощь",
     footerLegal: "Правовая информация",
+    termsLink: "Условия",
+    privacyLink: "Конфиденциальность",
     rights: "© 2026 Quality Imports. Все права защищены.",
     added: "Товар добавлен в корзину.",
     checkoutTitle: "Оформление заказа",
@@ -234,6 +238,8 @@ const copy = {
     footerBusiness: "Business",
     footerHelp: "Help",
     footerLegal: "Legal",
+    termsLink: "Terms and conditions",
+    privacyLink: "Privacy",
     rights: "© 2026 Quality Imports. All rights reserved.",
     added: "Product added to bag.",
     checkoutTitle: "Complete your order",
@@ -604,7 +610,7 @@ export default function Home() {
           <div><h3>{t.footerShop}</h3><a href="#collection">{t.navCollection}</a><a href="#collection">{t.navNew}</a></div>
           <div><h3>{t.footerBusiness}</h3><a href="#resellers">{t.navResellers}</a><a href="#resellers">Affiliate</a></div>
           <div><h3>{t.footerHelp}</h3><a href="#contact">Website chat</a><a href="#contact">Telegram / WhatsApp</a></div>
-          <div><h3>{t.footerLegal}</h3><a href="#quality">Terms & privacy</a><a href="#quality">Returns & delivery</a></div>
+          <div><h3>{t.footerLegal}</h3><a href="/terms">{t.termsLink}</a><a href="/privacy">{t.privacyLink}</a></div>
         </div>
         <div className="footer-bottom"><span>{t.rights}</span><span>Chișinău · Moldova</span></div>
       </footer>
