@@ -13,6 +13,15 @@ const statusLabels: Record<string, string> = {
   cancelled: "Cancelled",
 };
 
+const paymentLabels: Record<string, string> = {
+  setup_required: "Setup required",
+  awaiting_payment: "Awaiting payment",
+  paid: "Paid",
+  failed: "Payment failed",
+  expired: "Expired",
+  refunded: "Refunded",
+};
+
 function money(value: number, currency: string) {
   return `${new Intl.NumberFormat("ro-MD").format(value)} ${currency}`;
 }
@@ -39,8 +48,8 @@ export default async function StaffOrdersPage() {
 
   const orders = await listOrders();
   const telegramCount = orders.filter((order) => order.source === "telegram").length;
-  const websiteCount = orders.filter((order) => order.source === "website").length;
-  const newCount = orders.filter((order) => order.status === "new").length;
+  const paidCount = orders.filter((order) => order.payment_status === "paid").length;
+  const awaitingCount = orders.filter((order) => order.payment_status === "awaiting_payment").length;
 
   return (
     <main className={styles.shell}>
@@ -52,9 +61,9 @@ export default async function StaffOrdersPage() {
       <section className={styles.intro}>
         <div><p>STAFF / ORDERS</p><h1>One view of every order.</h1><span>Website and Telegram orders are labeled at creation and stored in the same protected system.</span></div>
         <dl>
-          <div><dt>New</dt><dd>{newCount}</dd></div>
+          <div><dt>Paid</dt><dd>{paidCount}</dd></div>
+          <div><dt>Awaiting</dt><dd>{awaitingCount}</dd></div>
           <div><dt>Telegram</dt><dd>{telegramCount}</dd></div>
-          <div><dt>Website</dt><dd>{websiteCount}</dd></div>
         </dl>
       </section>
 
@@ -68,7 +77,7 @@ export default async function StaffOrdersPage() {
         ) : (
           <div className={styles.tableWrap}>
             <table>
-              <thead><tr><th>Order</th><th>Source</th><th>Customer</th><th>Product</th><th>Total</th><th>Status</th><th>Placed</th></tr></thead>
+              <thead><tr><th>Order</th><th>Source</th><th>Customer</th><th>Product</th><th>Total</th><th>Payment</th><th>Fulfilment</th><th>Placed</th></tr></thead>
               <tbody>{orders.map((order) => (
                 <tr key={String(order.id)}>
                   <td><b>{String(order.order_number)}</b><small>{String(order.sku)}</small></td>
@@ -76,6 +85,7 @@ export default async function StaffOrdersPage() {
                   <td><b>{String(order.customer_name)}</b><small>{order.customer_username ? `@${String(order.customer_username)}` : String(order.customer_reference)}</small></td>
                   <td><b>{String(order.item_name)}</b><small>Quantity {String(order.quantity)}</small></td>
                   <td><b>{money(Number(order.total), String(order.currency))}</b></td>
+                  <td><span className={`${styles.payment} ${styles[`payment_${String(order.payment_status)}`]}`}>{paymentLabels[String(order.payment_status)] ?? String(order.payment_status)}</span><small>{order.payment_method ? String(order.payment_method) : order.payment_provider ? String(order.payment_provider) : "Not connected"}</small></td>
                   <td><span className={`${styles.status} ${styles[`status_${String(order.status)}`]}`}>{statusLabels[String(order.status)] ?? String(order.status)}</span></td>
                   <td><span>{dateTime(String(order.created_at))}</span></td>
                 </tr>

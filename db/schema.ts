@@ -17,6 +17,13 @@ export const orders = sqliteTable("orders", {
   customerUsername: text("customer_username"),
   currency: text("currency").notNull(),
   total: integer("total").notNull(),
+  paymentStatus: text("payment_status", { enum: ["setup_required", "awaiting_payment", "paid", "failed", "expired", "refunded"] }).notNull().default("setup_required"),
+  paymentProvider: text("payment_provider"),
+  paymentReference: text("payment_reference"),
+  paymentUrl: text("payment_url"),
+  paymentMethod: text("payment_method"),
+  paymentExpiresAt: text("payment_expires_at"),
+  paidAt: text("paid_at"),
   createdAt: text("created_at").notNull(),
   updatedAt: text("updated_at").notNull(),
 });

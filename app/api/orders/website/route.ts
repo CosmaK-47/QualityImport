@@ -1,5 +1,6 @@
 import inventoryData from "@/content/inventory.json";
-import { createOrder } from "@/db/orders";
+import { attachPaymentSession, createOrder } from "@/db/orders";
+import { createMaibCheckout, maibCheckoutConfigured } from "@/lib/payments/maib";
 
 type CheckoutItem = { sku?: string; quantity?: number };
 
@@ -46,5 +47,32 @@ export async function POST(request: Request) {
     items,
     currency: "MDL",
   });
-  return Response.json(order, { status: 201 });
+  if (!maibCheckoutConfigured()) {
+    return Response.json({ ...order, paymentSetupRequired: true }, { status: 202 });
+  }
+  try {
+    const origin = new URL(request.url).origin;
+    const checkout = await createMaibCheckout({
+      orderId: order.id,
+      orderNumber: order.orderNumber,
+      total: order.total,
+      currency: order.currency,
+      createdAt: new Date().toISOString(),
+      items,
+      customer: {
+        name: customerName,
+        email,
+        phone,
+        ip: request.headers.get("cf-connecting-ip") ?? undefined,
+        userAgent: request.headers.get("user-agent") ?? undefined,
+      },
+      language: "ro",
+      publicOrigin: origin,
+    });
+    await attachPaymentSession({ orderId: order.id, provider: "maib", ...checkout });
+    return Response.json({ ...order, paymentStatus: "awaiting_payment", checkoutUrl: checkout.url }, { status: 201 });
+  } catch (error) {
+    console.error("Could not create maib checkout", error);
+    return Response.json({ ...order, paymentSetupRequired: true }, { status: 202 });
+  }
 }

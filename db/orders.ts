@@ -3,6 +3,7 @@ import { env } from "cloudflare:workers";
 export type StaffRole = "admin" | "moderator" | "worker";
 export type OrderSource = "website" | "telegram";
 export type OrderStatus = "new" | "confirmed" | "preparing" | "ready" | "delivered" | "cancelled";
+export type PaymentStatus = "setup_required" | "awaiting_payment" | "paid" | "failed" | "expired" | "refunded";
 
 type D1ResultRow = Record<string, string | number | null>;
 
@@ -30,6 +31,13 @@ export async function ensureOrdersSchema() {
       customer_username TEXT,
       currency TEXT NOT NULL,
       total INTEGER NOT NULL,
+      payment_status TEXT NOT NULL DEFAULT 'setup_required',
+      payment_provider TEXT,
+      payment_reference TEXT,
+      payment_url TEXT,
+      payment_method TEXT,
+      payment_expires_at TEXT,
+      paid_at TEXT,
       created_at TEXT NOT NULL,
       updated_at TEXT NOT NULL
     )`),
@@ -52,6 +60,22 @@ export async function ensureOrdersSchema() {
     db.prepare("CREATE INDEX IF NOT EXISTS orders_source_idx ON orders(source)"),
     db.prepare("CREATE INDEX IF NOT EXISTS order_items_order_id_idx ON order_items(order_id)"),
   ]);
+
+  const columns = await db.prepare("PRAGMA table_info(orders)").all<{ name: string }>();
+  const existingColumns = new Set(columns.results.map((column) => column.name));
+  const missingColumns: Array<[string, string]> = [
+    ["payment_status", "ALTER TABLE orders ADD COLUMN payment_status TEXT NOT NULL DEFAULT 'setup_required'"],
+    ["payment_provider", "ALTER TABLE orders ADD COLUMN payment_provider TEXT"],
+    ["payment_reference", "ALTER TABLE orders ADD COLUMN payment_reference TEXT"],
+    ["payment_url", "ALTER TABLE orders ADD COLUMN payment_url TEXT"],
+    ["payment_method", "ALTER TABLE orders ADD COLUMN payment_method TEXT"],
+    ["payment_expires_at", "ALTER TABLE orders ADD COLUMN payment_expires_at TEXT"],
+    ["paid_at", "ALTER TABLE orders ADD COLUMN paid_at TEXT"],
+  ];
+  for (const [name, sql] of missingColumns) {
+    if (!existingColumns.has(name)) await db.prepare(sql).run();
+  }
+  await db.prepare("CREATE INDEX IF NOT EXISTS orders_payment_status_idx ON orders(payment_status)").run();
 }
 
 export function configuredAdminEmails() {
@@ -135,6 +159,7 @@ export async function createOrder(input: {
   customerUsername?: string | null;
   items: Array<{ sku: string; name: string; quantity: number; unitPrice: number }>;
   currency: string;
+  paymentStatus?: PaymentStatus;
 }) {
   await ensureOrdersSchema();
   const now = new Date().toISOString();
@@ -144,9 +169,9 @@ export async function createOrder(input: {
   const db = d1();
   await db.batch([
     db.prepare(`INSERT INTO orders
-      (id, order_number, source, status, customer_name, customer_reference, customer_username, currency, total, created_at, updated_at)
-      VALUES (?, ?, ?, 'new', ?, ?, ?, ?, ?, ?, ?)`)
-      .bind(id, orderNumber, input.source, input.customerName, input.customerReference, input.customerUsername ?? null, input.currency, total, now, now),
+      (id, order_number, source, status, customer_name, customer_reference, customer_username, currency, total, payment_status, created_at, updated_at)
+      VALUES (?, ?, ?, 'new', ?, ?, ?, ?, ?, ?, ?, ?)`)
+      .bind(id, orderNumber, input.source, input.customerName, input.customerReference, input.customerUsername ?? null, input.currency, total, input.paymentStatus ?? "setup_required", now, now),
     ...input.items.map((item) => db.prepare(`INSERT INTO order_items
       (id, order_id, sku, name, quantity, unit_price) VALUES (?, ?, ?, ?, ?, ?)`)
       .bind(crypto.randomUUID(), id, item.sku, item.name, item.quantity, item.unitPrice)),
@@ -154,7 +179,63 @@ export async function createOrder(input: {
       (id, order_id, event, actor, created_at) VALUES (?, ?, 'created', ?, ?)`)
       .bind(crypto.randomUUID(), id, `${input.source}:${input.customerReference}`, now),
   ]);
-  return { id, orderNumber, total, status: "new" as const };
+  return { id, orderNumber, total, currency: input.currency, status: "new" as const, paymentStatus: input.paymentStatus ?? "setup_required" };
+}
+
+export async function attachPaymentSession(input: {
+  orderId: string;
+  provider: string;
+  reference: string;
+  url: string;
+  expiresAt?: string | null;
+}) {
+  await ensureOrdersSchema();
+  const now = new Date().toISOString();
+  await d1().batch([
+    d1().prepare(`UPDATE orders SET payment_status = 'awaiting_payment', payment_provider = ?,
+      payment_reference = ?, payment_url = ?, payment_expires_at = ?, updated_at = ? WHERE id = ?`)
+      .bind(input.provider, input.reference, input.url, input.expiresAt ?? null, now, input.orderId),
+    d1().prepare(`INSERT INTO order_events (id, order_id, event, actor, created_at)
+      VALUES (?, ?, 'payment_session_created', ?, ?)`)
+      .bind(crypto.randomUUID(), input.orderId, input.provider, now),
+  ]);
+}
+
+export async function getOrderForPayment(orderNumber: string) {
+  await ensureOrdersSchema();
+  return d1().prepare(`SELECT id, order_number, total, currency, payment_status, payment_reference
+    FROM orders WHERE order_number = ? LIMIT 1`).bind(orderNumber).first<{
+      id: string;
+      order_number: string;
+      total: number;
+      currency: string;
+      payment_status: PaymentStatus;
+      payment_reference: string | null;
+    }>();
+}
+
+export async function markOrderPaid(input: {
+  orderId: string;
+  provider: string;
+  reference: string;
+  paymentMethod?: string | null;
+  paidAt: string;
+}) {
+  await ensureOrdersSchema();
+  const current = await d1().prepare("SELECT payment_status FROM orders WHERE id = ? LIMIT 1")
+    .bind(input.orderId).first<{ payment_status: PaymentStatus }>();
+  if (!current || current.payment_status === "paid") return false;
+  const now = new Date().toISOString();
+  await d1().batch([
+    d1().prepare(`UPDATE orders SET payment_status = 'paid', payment_provider = ?,
+      payment_reference = ?, payment_method = ?, paid_at = ?, updated_at = ?
+      WHERE id = ? AND payment_status != 'paid'`)
+      .bind(input.provider, input.reference, input.paymentMethod ?? null, input.paidAt, now, input.orderId),
+    d1().prepare(`INSERT INTO order_events (id, order_id, event, actor, created_at)
+      VALUES (?, ?, 'payment_confirmed', ?, ?)`)
+      .bind(crypto.randomUUID(), input.orderId, input.provider, now),
+  ]);
+  return true;
 }
 
 export async function listOrders() {
@@ -162,6 +243,8 @@ export async function listOrders() {
   const result = await d1().prepare(`SELECT
       o.id, o.order_number, o.source, o.status, o.customer_name,
       o.customer_reference, o.customer_username, o.currency, o.total,
+      o.payment_status, o.payment_provider, o.payment_reference, o.payment_method,
+      o.payment_expires_at, o.paid_at,
       o.created_at, o.updated_at,
       GROUP_CONCAT(i.sku, ', ') AS sku,
       GROUP_CONCAT(i.name || ' ×' || i.quantity, ', ') AS item_name,

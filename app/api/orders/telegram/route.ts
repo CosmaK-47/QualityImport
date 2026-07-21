@@ -1,5 +1,6 @@
 import inventoryData from "@/content/inventory.json";
-import { createOrder } from "@/db/orders";
+import { attachPaymentSession, createOrder } from "@/db/orders";
+import { createMaibCheckout, maibCheckoutConfigured } from "@/lib/payments/maib";
 import { env } from "cloudflare:workers";
 
 function authorized(request: Request) {
@@ -16,6 +17,7 @@ export async function POST(request: Request) {
     telegramUsername?: string;
     customerName?: string;
     quantity?: number;
+    language?: "ro" | "ru" | "en";
   };
   const quantity = Number(body.quantity ?? 1);
   if (!body.sku || !body.telegramUserId || !Number.isInteger(quantity) || quantity < 1 || quantity > 20) {
@@ -34,5 +36,25 @@ export async function POST(request: Request) {
     items: [{ sku: product.sku, name: product.telegram.name, quantity, unitPrice: product.price }],
     currency: product.currency,
   });
-  return Response.json(order, { status: 201 });
+  if (!maibCheckoutConfigured()) {
+    return Response.json({ ...order, paymentSetupRequired: true }, { status: 202 });
+  }
+  try {
+    const checkout = await createMaibCheckout({
+      orderId: order.id,
+      orderNumber: order.orderNumber,
+      total: order.total,
+      currency: order.currency,
+      createdAt: new Date().toISOString(),
+      items: [{ sku: product.sku, name: product.telegram.name, quantity, unitPrice: product.price }],
+      customer: { name: String(body.customerName || body.telegramUsername || "Telegram customer").slice(0, 120) },
+      language: body.language === "ru" || body.language === "en" ? body.language : "ro",
+      publicOrigin: new URL(request.url).origin,
+    });
+    await attachPaymentSession({ orderId: order.id, provider: "maib", ...checkout });
+    return Response.json({ ...order, paymentStatus: "awaiting_payment", checkoutUrl: checkout.url }, { status: 201 });
+  } catch (error) {
+    console.error("Could not create maib checkout", error);
+    return Response.json({ ...order, paymentSetupRequired: true }, { status: 202 });
+  }
 }

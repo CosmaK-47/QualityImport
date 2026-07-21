@@ -87,6 +87,8 @@ const copy = {
     secureCheckout: "Prețul și stocul sunt verificate înainte de confirmare.",
     emptyBag: "Coșul este gol.",
     continueShopping: "Continuă cumpărăturile",
+    redirectingPayment: "Te redirecționăm către plata securizată…",
+    paymentSetupRequired: "Comanda a fost salvată, dar plata online nu este activată încă. Echipa QI nu va expedia comanda înainte de plată.",
   },
   RU: {
     announcement: "Доставка по всей Молдове · Товары в наличии и избранный предзаказ",
@@ -165,6 +167,8 @@ const copy = {
     secureCheckout: "Цена и наличие проверяются перед подтверждением.",
     emptyBag: "Корзина пуста.",
     continueShopping: "Продолжить покупки",
+    redirectingPayment: "Перенаправляем на защищённую оплату…",
+    paymentSetupRequired: "Заказ сохранён, но онлайн-оплата ещё не активирована. Команда QI не отправит заказ до оплаты.",
   },
   EN: {
     announcement: "Delivery across Moldova · In-stock and selected preorder",
@@ -243,6 +247,8 @@ const copy = {
     secureCheckout: "Price and stock are verified before confirmation.",
     emptyBag: "Your bag is empty.",
     continueShopping: "Continue shopping",
+    redirectingPayment: "Redirecting you to secure payment…",
+    paymentSetupRequired: "The order was saved, but online payment is not active yet. The QI team will not ship it before payment.",
   },
 } as const;
 
@@ -280,6 +286,8 @@ export default function Home() {
             quantity <= 99,
         ),
       ) as Record<string, number>;
+      // Restoring device-local cart state is the synchronization performed by this effect.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setBagItems(restoredBag);
     } catch {
       window.localStorage.removeItem(BAG_STORAGE_KEY);
@@ -339,8 +347,13 @@ export default function Home() {
     });
     const result = await response.json();
     if (response.ok) {
-      setCheckoutResult(`Order ${result.orderNumber} was placed successfully.`);
-      setBagItems({}); formElement.reset();
+      if (result.checkoutUrl) {
+        setCheckoutResult(t.redirectingPayment);
+        setBagItems({}); formElement.reset();
+        window.location.assign(result.checkoutUrl);
+        return;
+      }
+      setCheckoutResult(t.paymentSetupRequired);
     } else setCheckoutResult(result.error ?? "The order could not be placed.");
     setCheckoutBusy(false);
   }

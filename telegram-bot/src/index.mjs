@@ -53,6 +53,9 @@ const copy = {
     cancelOrder: "Anulează",
     orderQuestion: "Confirmi o comandă de 1 bucată? Echipa QI te va contacta în Telegram pentru mărime și livrare.",
     orderSuccess: "Comanda a fost înregistrată. Numărul comenzii:",
+    payOrder: "Plătește securizat",
+    paymentRequired: "Comanda va fi procesată numai după confirmarea plății.",
+    paymentSetup: "Plata online este în curs de activare. Comanda nu va fi expediată înainte de plată.",
     orderUnavailable: "Comenzile nu sunt configurate încă. Te rugăm să încerci mai târziu.",
     availability: { stock: "În stoc", preorder: "Precomandă" },
     categoryNames: { outerwear: "Jachete", tops: "Topuri", bottoms: "Pantaloni", shoes: "Încălțăminte" },
@@ -75,6 +78,9 @@ const copy = {
     cancelOrder: "Отмена",
     orderQuestion: "Подтвердить заказ 1 штуки? Команда QI свяжется с вами в Telegram для уточнения размера и доставки.",
     orderSuccess: "Заказ зарегистрирован. Номер заказа:",
+    payOrder: "Безопасная оплата",
+    paymentRequired: "Заказ будет обработан только после подтверждения оплаты.",
+    paymentSetup: "Онлайн-оплата активируется. Заказ не будет отправлен до оплаты.",
     orderUnavailable: "Приём заказов ещё не настроен. Пожалуйста, попробуйте позже.",
     availability: { stock: "В наличии", preorder: "Предзаказ" },
     categoryNames: { outerwear: "Куртки", tops: "Верх", bottoms: "Брюки", shoes: "Обувь" },
@@ -97,6 +103,9 @@ const copy = {
     cancelOrder: "Cancel",
     orderQuestion: "Confirm an order for 1 item? The QI team will contact you in Telegram about size and delivery.",
     orderSuccess: "Your order was registered. Order number:",
+    payOrder: "Pay securely",
+    paymentRequired: "The order will be processed only after payment is confirmed.",
+    paymentSetup: "Online payment is being activated. The order will not be shipped before payment.",
     orderUnavailable: "Ordering is not configured yet. Please try again later.",
     availability: { stock: "In stock", preorder: "Preorder" },
     categoryNames: { outerwear: "Outerwear", tops: "Tops", bottoms: "Trousers", shoes: "Shoes" },
@@ -267,7 +276,7 @@ function productKeyboard(language, filter, position, total) {
   ] };
 }
 
-async function placeTelegramOrder(sku, telegramUser) {
+async function placeTelegramOrder(sku, telegramUser, language) {
   if (!orderServiceSecret || orderServiceSecret.length < 24) throw new Error("ORDER_SERVICE_SECRET is missing");
   const response = await fetch(ordersApiUrl, {
     method: "POST",
@@ -278,6 +287,7 @@ async function placeTelegramOrder(sku, telegramUser) {
       telegramUserId: String(telegramUser.id),
       telegramUsername: telegramUser.username ?? null,
       customerName: [telegramUser.first_name, telegramUser.last_name].filter(Boolean).join(" "),
+      language: language.toLowerCase(),
     }),
     signal: AbortSignal.timeout(15000),
   });
@@ -364,8 +374,12 @@ async function handleCallback(callback) {
     });
   } else if (action === "confirm") {
     try {
-      const order = await placeTelegramOrder(value, callback.from);
-      await sendMessage(chatId, `✓ <b>${escapeHtml(copy[language].orderSuccess)}</b>\n<code>${escapeHtml(order.orderNumber)}</code>`, mainKeyboard(language));
+      const order = await placeTelegramOrder(value, callback.from, language);
+      const message = `✓ <b>${escapeHtml(copy[language].orderSuccess)}</b>\n<code>${escapeHtml(order.orderNumber)}</code>\n\n${escapeHtml(order.checkoutUrl ? copy[language].paymentRequired : copy[language].paymentSetup)}`;
+      const keyboard = order.checkoutUrl
+        ? { inline_keyboard: [[{ text: `💳 ${copy[language].payOrder}`, url: order.checkoutUrl }], ...mainKeyboard(language).inline_keyboard] }
+        : mainKeyboard(language);
+      await sendMessage(chatId, message, keyboard);
     } catch (error) {
       console.error(`Could not create Telegram order: ${error.message}`);
       await sendMessage(chatId, copy[language].orderUnavailable, mainKeyboard(language));
