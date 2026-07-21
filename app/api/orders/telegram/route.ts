@@ -16,11 +16,17 @@ export async function POST(request: Request) {
     telegramUserId?: string;
     telegramUsername?: string;
     customerName?: string;
+    email?: string;
+    phone?: string;
     quantity?: number;
     language?: "ro" | "ru" | "en";
   };
   const quantity = Number(body.quantity ?? 1);
-  if (!body.sku || !body.telegramUserId || !Number.isInteger(quantity) || quantity < 1 || quantity > 20) {
+  const email = String(body.email ?? "").trim().toLowerCase().slice(0, 160);
+  const phone = String(body.phone ?? "").trim().slice(0, 50);
+  const phoneDigits = phone.replace(/\D/g, "");
+  if (!body.sku || !body.telegramUserId || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) ||
+      phoneDigits.length < 8 || phoneDigits.length > 15 || !Number.isInteger(quantity) || quantity < 1 || quantity > 20) {
     return Response.json({ error: "Invalid order" }, { status: 400 });
   }
   const product = inventoryData.products.find((item) => item.sku === body.sku && item.telegram.enabled);
@@ -33,6 +39,8 @@ export async function POST(request: Request) {
     customerName: String(body.customerName || body.telegramUsername || "Telegram customer").slice(0, 120),
     customerReference: String(body.telegramUserId),
     customerUsername: body.telegramUsername ? String(body.telegramUsername).slice(0, 80) : null,
+    customerEmail: email,
+    customerPhone: phone,
     items: [{ sku: product.sku, name: product.telegram.name, quantity, unitPrice: product.price }],
     currency: product.currency,
   });
@@ -47,7 +55,11 @@ export async function POST(request: Request) {
       currency: order.currency,
       createdAt: new Date().toISOString(),
       items: [{ sku: product.sku, name: product.telegram.name, quantity, unitPrice: product.price }],
-      customer: { name: String(body.customerName || body.telegramUsername || "Telegram customer").slice(0, 120) },
+      customer: {
+        name: String(body.customerName || body.telegramUsername || "Telegram customer").slice(0, 120),
+        email,
+        phone,
+      },
       language: body.language === "ru" || body.language === "en" ? body.language : "ro",
       publicOrigin: new URL(request.url).origin,
     });

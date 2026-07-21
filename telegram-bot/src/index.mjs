@@ -52,6 +52,12 @@ const copy = {
     confirmOrder: "Confirmă comanda",
     cancelOrder: "Anulează",
     orderQuestion: "Confirmi o comandă de 1 bucată? Echipa QI te va contacta în Telegram pentru mărime și livrare.",
+    askEmail: "Înainte de comandă, trimite adresa ta de email:",
+    invalidEmail: "Adresa de email nu pare validă. Te rugăm să o introduci din nou sau scrie /cancel.",
+    askPhone: "Acum trimite numărul de telefon. Poți folosi butonul securizat de mai jos sau îl poți scrie:",
+    sharePhone: "Trimite numărul meu",
+    invalidPhone: "Numărul nu pare valid. Te rugăm să îl introduci din nou sau scrie /cancel.",
+    checkoutCancelled: "Comanda a fost anulată.",
     orderSuccess: "Comanda a fost înregistrată. Numărul comenzii:",
     payOrder: "Plătește securizat",
     paymentRequired: "Comanda va fi procesată numai după confirmarea plății.",
@@ -77,6 +83,12 @@ const copy = {
     confirmOrder: "Подтвердить заказ",
     cancelOrder: "Отмена",
     orderQuestion: "Подтвердить заказ 1 штуки? Команда QI свяжется с вами в Telegram для уточнения размера и доставки.",
+    askEmail: "Перед оформлением отправьте ваш адрес электронной почты:",
+    invalidEmail: "Адрес электронной почты выглядит неверно. Введите его снова или напишите /cancel.",
+    askPhone: "Теперь отправьте номер телефона. Можно использовать защищённую кнопку ниже или ввести номер:",
+    sharePhone: "Отправить мой номер",
+    invalidPhone: "Номер телефона выглядит неверно. Введите его снова или напишите /cancel.",
+    checkoutCancelled: "Оформление заказа отменено.",
     orderSuccess: "Заказ зарегистрирован. Номер заказа:",
     payOrder: "Безопасная оплата",
     paymentRequired: "Заказ будет обработан только после подтверждения оплаты.",
@@ -102,6 +114,12 @@ const copy = {
     confirmOrder: "Confirm order",
     cancelOrder: "Cancel",
     orderQuestion: "Confirm an order for 1 item? The QI team will contact you in Telegram about size and delivery.",
+    askEmail: "Before ordering, please send your email address:",
+    invalidEmail: "That email address does not look valid. Please try again or type /cancel.",
+    askPhone: "Now send your phone number. You can use the secure button below or type it:",
+    sharePhone: "Share my phone number",
+    invalidPhone: "That phone number does not look valid. Please try again or type /cancel.",
+    checkoutCancelled: "Checkout cancelled.",
     orderSuccess: "Your order was registered. Order number:",
     payOrder: "Pay securely",
     paymentRequired: "The order will be processed only after payment is confirmed.",
@@ -113,6 +131,7 @@ const copy = {
 };
 
 const userLanguages = new Map();
+const pendingOrders = new Map();
 let offset = 0;
 let stopping = false;
 
@@ -193,6 +212,23 @@ async function sendMessage(chatId, text, replyMarkup) {
     disable_web_page_preview: true,
     ...(replyMarkup ? { reply_markup: replyMarkup } : {}),
   });
+}
+
+function phoneKeyboard(language) {
+  return {
+    keyboard: [[{ text: copy[language].sharePhone, request_contact: true }]],
+    resize_keyboard: true,
+    one_time_keyboard: true,
+  };
+}
+
+const removeReplyKeyboard = { remove_keyboard: true };
+const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+function normalizePhone(value) {
+  const phone = String(value ?? "").trim();
+  const digits = phone.replace(/\D/g, "");
+  return digits.length >= 8 && digits.length <= 15 ? phone.slice(0, 50) : "";
 }
 
 async function editMessage(chatId, messageId, text, replyMarkup) {
@@ -276,7 +312,7 @@ function productKeyboard(language, filter, position, total) {
   ] };
 }
 
-async function placeTelegramOrder(sku, telegramUser, language) {
+async function placeTelegramOrder(sku, telegramUser, language, email, phone) {
   if (!orderServiceSecret || orderServiceSecret.length < 24) throw new Error("ORDER_SERVICE_SECRET is missing");
   const response = await fetch(ordersApiUrl, {
     method: "POST",
@@ -287,6 +323,8 @@ async function placeTelegramOrder(sku, telegramUser, language) {
       telegramUserId: String(telegramUser.id),
       telegramUsername: telegramUser.username ?? null,
       customerName: [telegramUser.first_name, telegramUser.last_name].filter(Boolean).join(" "),
+      email,
+      phone,
       language: language.toLowerCase(),
     }),
     signal: AbortSignal.timeout(15000),
@@ -335,6 +373,49 @@ async function handleMessage(message) {
   const command = (message.text ?? "").split(/\s+/)[0].split("@")[0].toLowerCase();
   const language = userLanguages.get(chatId) ?? "RO";
 
+  if (command === "/cancel" && pendingOrders.has(chatId)) {
+    pendingOrders.delete(chatId);
+    await sendMessage(chatId, copy[language].checkoutCancelled, removeReplyKeyboard);
+    await sendMainMenu(chatId, language);
+    return;
+  }
+
+  const pendingOrder = pendingOrders.get(chatId);
+  if (pendingOrder) {
+    if (pendingOrder.step === "email") {
+      const email = String(message.text ?? "").trim().toLowerCase().slice(0, 160);
+      if (!emailPattern.test(email)) {
+        await sendMessage(chatId, copy[language].invalidEmail);
+        return;
+      }
+      pendingOrders.set(chatId, { ...pendingOrder, step: "phone", email });
+      await sendMessage(chatId, copy[language].askPhone, phoneKeyboard(language));
+      return;
+    }
+
+    const contactBelongsToCustomer = !message.contact?.user_id || message.contact.user_id === message.from?.id;
+    const phone = contactBelongsToCustomer ? normalizePhone(message.contact?.phone_number ?? message.text) : "";
+    if (!phone) {
+      await sendMessage(chatId, copy[language].invalidPhone, phoneKeyboard(language));
+      return;
+    }
+    pendingOrders.delete(chatId);
+    try {
+      const order = await placeTelegramOrder(pendingOrder.sku, message.from ?? pendingOrder.telegramUser, language, pendingOrder.email, phone);
+      const confirmation = `✓ <b>${escapeHtml(copy[language].orderSuccess)}</b>\n<code>${escapeHtml(order.orderNumber)}</code>\n\n${escapeHtml(order.checkoutUrl ? copy[language].paymentRequired : copy[language].paymentSetup)}`;
+      await sendMessage(chatId, confirmation, removeReplyKeyboard);
+      const keyboard = order.checkoutUrl
+        ? { inline_keyboard: [[{ text: `💳 ${copy[language].payOrder}`, url: order.checkoutUrl }], ...mainKeyboard(language).inline_keyboard] }
+        : mainKeyboard(language);
+      await sendMessage(chatId, order.checkoutUrl ? copy[language].payOrder : copy[language].back, keyboard);
+    } catch (error) {
+      console.error(`Could not create Telegram order: ${error.message}`);
+      await sendMessage(chatId, copy[language].orderUnavailable, removeReplyKeyboard);
+      await sendMainMenu(chatId, language);
+    }
+    return;
+  }
+
   if (command === "/start" || command === "/language") {
     await sendMessage(chatId, copy[language].chooseLanguage, languageKeyboard());
   } else if (command === "/stock") {
@@ -373,17 +454,8 @@ async function handleCallback(callback) {
       ]],
     });
   } else if (action === "confirm") {
-    try {
-      const order = await placeTelegramOrder(value, callback.from, language);
-      const message = `✓ <b>${escapeHtml(copy[language].orderSuccess)}</b>\n<code>${escapeHtml(order.orderNumber)}</code>\n\n${escapeHtml(order.checkoutUrl ? copy[language].paymentRequired : copy[language].paymentSetup)}`;
-      const keyboard = order.checkoutUrl
-        ? { inline_keyboard: [[{ text: `💳 ${copy[language].payOrder}`, url: order.checkoutUrl }], ...mainKeyboard(language).inline_keyboard] }
-        : mainKeyboard(language);
-      await sendMessage(chatId, message, keyboard);
-    } catch (error) {
-      console.error(`Could not create Telegram order: ${error.message}`);
-      await sendMessage(chatId, copy[language].orderUnavailable, mainKeyboard(language));
-    }
+    pendingOrders.set(chatId, { step: "email", sku: value, telegramUser: callback.from });
+    await sendMessage(chatId, copy[language].askEmail);
   } else if (callback.data === "menu:categories") {
     await sendMessage(chatId, copy[language].categories, categoryKeyboard(language));
   } else if (callback.data === "menu:language") {
