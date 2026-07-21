@@ -31,10 +31,7 @@ export async function POST(request: Request) {
     customerName: String(body.customerName || body.telegramUsername || "Telegram customer").slice(0, 120),
     customerReference: String(body.telegramUserId),
     customerUsername: body.telegramUsername ? String(body.telegramUsername).slice(0, 80) : null,
-    sku: product.sku,
-    name: product.telegram.name,
-    quantity,
-    unitPrice: product.price,
+    items: [{ sku: product.sku, name: product.telegram.name, quantity, unitPrice: product.price }],
     currency: product.currency,
   });
   return Response.json(order, { status: 201 });

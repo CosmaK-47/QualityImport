@@ -133,26 +133,23 @@ export async function createOrder(input: {
   customerName: string;
   customerReference: string;
   customerUsername?: string | null;
-  sku: string;
-  name: string;
-  quantity: number;
-  unitPrice: number;
+  items: Array<{ sku: string; name: string; quantity: number; unitPrice: number }>;
   currency: string;
 }) {
   await ensureOrdersSchema();
   const now = new Date().toISOString();
   const id = crypto.randomUUID();
   const orderNumber = `QI-${now.slice(2, 10).replaceAll("-", "")}-${id.slice(0, 6).toUpperCase()}`;
-  const total = input.quantity * input.unitPrice;
+  const total = input.items.reduce((sum, item) => sum + item.quantity * item.unitPrice, 0);
   const db = d1();
   await db.batch([
     db.prepare(`INSERT INTO orders
       (id, order_number, source, status, customer_name, customer_reference, customer_username, currency, total, created_at, updated_at)
       VALUES (?, ?, ?, 'new', ?, ?, ?, ?, ?, ?, ?)`)
       .bind(id, orderNumber, input.source, input.customerName, input.customerReference, input.customerUsername ?? null, input.currency, total, now, now),
-    db.prepare(`INSERT INTO order_items
+    ...input.items.map((item) => db.prepare(`INSERT INTO order_items
       (id, order_id, sku, name, quantity, unit_price) VALUES (?, ?, ?, ?, ?, ?)`)
-      .bind(crypto.randomUUID(), id, input.sku, input.name, input.quantity, input.unitPrice),
+      .bind(crypto.randomUUID(), id, item.sku, item.name, item.quantity, item.unitPrice)),
     db.prepare(`INSERT INTO order_events
       (id, order_id, event, actor, created_at) VALUES (?, ?, 'created', ?, ?)`)
       .bind(crypto.randomUUID(), id, `${input.source}:${input.customerReference}`, now),
@@ -166,9 +163,12 @@ export async function listOrders() {
       o.id, o.order_number, o.source, o.status, o.customer_name,
       o.customer_reference, o.customer_username, o.currency, o.total,
       o.created_at, o.updated_at,
-      i.sku, i.name AS item_name, i.quantity, i.unit_price
+      GROUP_CONCAT(i.sku, ', ') AS sku,
+      GROUP_CONCAT(i.name || ' ×' || i.quantity, ', ') AS item_name,
+      SUM(i.quantity) AS quantity
     FROM orders o
     LEFT JOIN order_items i ON i.order_id = o.id
+    GROUP BY o.id
     ORDER BY o.created_at DESC
     LIMIT 250`).all<D1ResultRow>();
   return result.results;

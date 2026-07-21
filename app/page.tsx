@@ -208,6 +208,10 @@ export default function Home() {
   const [category, setCategory] = useState<Category>("all");
   const [availability, setAvailability] = useState<Availability>("all");
   const [bagCount, setBagCount] = useState(0);
+  const [bagItems, setBagItems] = useState<Record<string, number>>({});
+  const [bagOpen, setBagOpen] = useState(false);
+  const [checkoutBusy, setCheckoutBusy] = useState(false);
+  const [checkoutResult, setCheckoutResult] = useState("");
   const [menuOpen, setMenuOpen] = useState(false);
   const [statusMessage, setStatusMessage] = useState("");
   const t = copy[language];
@@ -222,10 +226,44 @@ export default function Home() {
     [category, availability],
   );
 
-  function addToBag() {
+  function addToBag(productId: string) {
+    setBagItems((items) => ({ ...items, [productId]: (items[productId] ?? 0) + 1 }));
     setBagCount((value) => value + 1);
     setStatusMessage(t.added);
     window.setTimeout(() => setStatusMessage(""), 1800);
+  }
+
+  function changeQuantity(productId: string, change: number) {
+    setBagItems((items) => {
+      const next = Math.max(0, (items[productId] ?? 0) + change);
+      const updated = { ...items };
+      if (next === 0) delete updated[productId]; else updated[productId] = next;
+      setBagCount(Object.values(updated).reduce((sum, quantity) => sum + quantity, 0));
+      return updated;
+    });
+  }
+
+  const selectedBagItems = products.filter((product) => bagItems[product.id]).map((product) => ({ ...product, quantity: bagItems[product.id] }));
+
+  async function submitCheckout(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault(); setCheckoutBusy(true); setCheckoutResult("");
+    const formElement = event.currentTarget;
+    const form = new FormData(formElement);
+    const response = await fetch("/api/orders/website", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        customerName: form.get("customerName"), email: form.get("email"), phone: form.get("phone"),
+        delivery: form.get("delivery"), company: form.get("company"),
+        items: selectedBagItems.map((item) => ({ sku: item.sku, quantity: item.quantity })),
+      }),
+    });
+    const result = await response.json();
+    if (response.ok) {
+      setCheckoutResult(`Order ${result.orderNumber} was placed successfully.`);
+      setBagItems({}); setBagCount(0); formElement.reset();
+    } else setCheckoutResult(result.error ?? "The order could not be placed.");
+    setCheckoutBusy(false);
   }
 
   return (
@@ -262,7 +300,7 @@ export default function Home() {
             ))}
           </div>
           <button className="text-action" type="button">{t.account}</button>
-          <button className="bag-action" type="button" aria-label={`${t.bag}: ${bagCount}`}>
+          <button className="bag-action" type="button" aria-label={`${t.bag}: ${bagCount}`} onClick={() => setBagOpen(true)}>
             {t.bag} <span>{String(bagCount).padStart(2, "0")}</span>
           </button>
           <button
@@ -374,7 +412,7 @@ export default function Home() {
                   </div>
                   <div className="product-purchase">
                     <strong>{product.price}</strong>
-                    <button type="button" onClick={addToBag} aria-label={`${t.add}: ${product.name}`}>+</button>
+                    <button type="button" onClick={() => addToBag(product.id)} aria-label={`${t.add}: ${product.name}`}>+</button>
                   </div>
                 </div>
               </article>
@@ -469,6 +507,24 @@ export default function Home() {
       <div className={`toast ${statusMessage ? "visible" : ""}`} role="status" aria-live="polite">
         {statusMessage}
       </div>
+
+      <div className={`bag-backdrop ${bagOpen ? "visible" : ""}`} onClick={() => setBagOpen(false)} />
+      <aside className={`bag-drawer ${bagOpen ? "open" : ""}`} aria-hidden={!bagOpen} aria-label="Shopping bag">
+        <div className="bag-drawer-head"><div><p>QI / CHECKOUT</p><h2>{t.bag}</h2></div><button type="button" onClick={() => setBagOpen(false)} aria-label="Close bag">×</button></div>
+        {selectedBagItems.length === 0 ? <div className="bag-empty"><span>00</span><h3>Your bag is empty.</h3><button type="button" onClick={() => setBagOpen(false)}>Continue shopping</button></div> : <>
+          <div className="bag-lines">{selectedBagItems.map((item) => <article key={item.id}><div><b>{item.name}</b><small>{item.sku} · {item.price}</small></div><div className="bag-quantity"><button type="button" onClick={() => changeQuantity(item.id, -1)}>−</button><span>{item.quantity}</span><button type="button" onClick={() => changeQuantity(item.id, 1)}>+</button></div></article>)}</div>
+          <form className="checkout-form" onSubmit={submitCheckout}>
+            <h3>Delivery details</h3>
+            <label>Full name<input name="customerName" required minLength={2} autoComplete="name" /></label>
+            <div><label>Email<input name="email" type="email" required autoComplete="email" /></label><label>Phone<input name="phone" required minLength={6} autoComplete="tel" /></label></div>
+            <label>Delivery address or pickup details<textarea name="delivery" required minLength={4} rows={3} /></label>
+            <label className="checkout-trap" aria-hidden="true">Company<input name="company" tabIndex={-1} autoComplete="off" /></label>
+            {checkoutResult && <p className="checkout-result" role="status">{checkoutResult}</p>}
+            <button className="checkout-submit" disabled={checkoutBusy}>{checkoutBusy ? "Placing order…" : "Place order"}</button>
+            <small>Prices and stock are verified securely when the order is placed.</small>
+          </form>
+        </>}
+      </aside>
     </main>
   );
 }
