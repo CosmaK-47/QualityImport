@@ -89,6 +89,7 @@ const copy = {
     continueShopping: "Continuă cumpărăturile",
     redirectingPayment: "Te redirecționăm către plata securizată…",
     paymentSetupRequired: "Comanda a fost salvată, dar plata online nu este activată încă. Echipa QI nu va expedia comanda înainte de plată.",
+    marketingConsent: "Sunt de acord să primesc prin email noutăți și oferte QI. Opțional; datele comenzii sunt păstrate separat pentru procesarea acesteia.",
   },
   RU: {
     announcement: "Доставка по всей Молдове · Товары в наличии и избранный предзаказ",
@@ -169,6 +170,7 @@ const copy = {
     continueShopping: "Продолжить покупки",
     redirectingPayment: "Перенаправляем на защищённую оплату…",
     paymentSetupRequired: "Заказ сохранён, но онлайн-оплата ещё не активирована. Команда QI не отправит заказ до оплаты.",
+    marketingConsent: "Я согласен получать новости и предложения QI по электронной почте. Необязательно; данные заказа хранятся отдельно для его обработки.",
   },
   EN: {
     announcement: "Delivery across Moldova · In-stock and selected preorder",
@@ -249,6 +251,7 @@ const copy = {
     continueShopping: "Continue shopping",
     redirectingPayment: "Redirecting you to secure payment…",
     paymentSetupRequired: "The order was saved, but online payment is not active yet. The QI team will not ship it before payment.",
+    marketingConsent: "I agree to receive QI news and offers by email. Optional; order details are stored separately to process the order.",
   },
 } as const;
 
@@ -342,6 +345,7 @@ export default function Home() {
       body: JSON.stringify({
         customerName: form.get("customerName"), email: form.get("email"), phone: form.get("phone"),
         delivery: form.get("delivery"), company: form.get("company"),
+        marketingConsent: form.get("marketingConsent") === "on",
         items: selectedBagItems.map((item) => ({ sku: item.sku, quantity: item.quantity })),
       }),
     });
@@ -610,6 +614,7 @@ export default function Home() {
             <label>{t.fullName}<input name="customerName" required minLength={2} autoComplete="name" placeholder={t.fullNamePlaceholder} /></label>
             <div><label>{t.emailLabel}<input name="email" type="email" required autoComplete="email" placeholder="name@example.com" /></label><label>{t.phoneLabel}<input name="phone" required minLength={6} autoComplete="tel" placeholder="+373 60 000 000" /></label></div>
             <label>{t.deliveryLabel}<textarea name="delivery" required minLength={4} rows={2} placeholder={t.deliveryPlaceholder} /></label>
+            <label className="checkout-consent"><input name="marketingConsent" type="checkbox" /> <span>{t.marketingConsent}</span></label>
             <label className="checkout-trap" aria-hidden="true">Company<input name="company" tabIndex={-1} autoComplete="off" /></label>
             {checkoutResult && <p className="checkout-result" role="status">{checkoutResult}</p>}
             <button className="checkout-submit" disabled={checkoutBusy}>{checkoutBusy ? t.placingOrder : t.placeOrder}</button>

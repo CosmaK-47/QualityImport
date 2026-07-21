@@ -55,7 +55,7 @@ export default async function StaffOrdersPage() {
     <main className={styles.shell}>
       <header className={styles.header}>
         <div className={styles.brand}><span>QI</span><div><b>Quality Imports</b><small>Order operations</small></div></div>
-        <div className={styles.account}><span>{role}</span><div>{user.displayName}<small>{user.email}</small></div>{role === "admin" && <a href="/staff/team">Team</a>}<a href={chatGPTSignOutPath("/")}>Sign out</a></div>
+        <div className={styles.account}><span>{role}</span><div>{user.displayName}<small>{user.email}</small></div>{role !== "worker" && <a href="/staff/customers">Customers</a>}{role === "admin" && <a href="/staff/team">Team</a>}<a href={chatGPTSignOutPath("/")}>Sign out</a></div>
       </header>
 
       <section className={styles.intro}>
@@ -82,10 +82,10 @@ export default async function StaffOrdersPage() {
                 <tr key={String(order.id)}>
                   <td><b>{String(order.order_number)}</b><small>{String(order.sku)}</small></td>
                   <td><span className={`${styles.source} ${order.source === "telegram" ? styles.telegram : styles.website}`}>{order.source === "telegram" ? "Telegram order" : "Website order"}</span></td>
-                  <td><b>{String(order.customer_name)}</b><small>{order.customer_username ? `@${String(order.customer_username)}` : String(order.customer_reference)}</small></td>
+                  <td><b>{String(order.customer_name)}</b><small>{order.customer_username ? `@${String(order.customer_username)}` : order.customer_email ? String(order.customer_email) : String(order.customer_reference)}</small>{order.customer_phone && <small>{String(order.customer_phone)}</small>}</td>
                   <td><b>{String(order.item_name)}</b><small>Quantity {String(order.quantity)}</small></td>
                   <td><b>{money(Number(order.total), String(order.currency))}</b></td>
-                  <td><span className={`${styles.payment} ${styles[`payment_${String(order.payment_status)}`]}`}>{paymentLabels[String(order.payment_status)] ?? String(order.payment_status)}</span><small>{order.payment_method ? String(order.payment_method) : order.payment_provider ? String(order.payment_provider) : "Not connected"}</small></td>
+                  <td><span className={`${styles.payment} ${styles[`payment_${String(order.payment_status)}`]}`}>{paymentLabels[String(order.payment_status)] ?? String(order.payment_status)}</span><small>{order.payment_method ? String(order.payment_method) : order.payment_provider ? String(order.payment_provider) : "Not connected"}</small><small>Email: {String(order.confirmation_email_status)}</small></td>
                   <td><span className={`${styles.status} ${styles[`status_${String(order.status)}`]}`}>{statusLabels[String(order.status)] ?? String(order.status)}</span></td>
                   <td><span>{dateTime(String(order.created_at))}</span></td>
                 </tr>

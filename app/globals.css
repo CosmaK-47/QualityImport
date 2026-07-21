@@ -811,3 +811,23 @@ a:focus-visible {
   color: #68645d !important;
   opacity: 1 !important;
 }
+
+.bag-drawer .checkout-form .checkout-consent {
+  display: grid;
+  grid-template-columns: 18px 1fr;
+  align-items: start;
+  gap: 10px;
+  padding: 12px 14px;
+  border: 1px solid #cbc5b9;
+  background: #ece8df;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.45;
+}
+
+.bag-drawer .checkout-form .checkout-consent input {
+  width: 18px;
+  height: 18px;
+  margin: 0;
+  accent-color: #171713;
+}

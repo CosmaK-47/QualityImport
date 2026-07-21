@@ -1,5 +1,6 @@
 import inventoryData from "@/content/inventory.json";
-import { attachPaymentSession, createOrder } from "@/db/orders";
+import { attachPaymentSession, createOrder, recordConfirmationEmail } from "@/db/orders";
+import { orderEmailConfigured, sendOrderConfirmation } from "@/lib/email/order-confirmation";
 import { createMaibCheckout, maibCheckoutConfigured } from "@/lib/payments/maib";
 
 type CheckoutItem = { sku?: string; quantity?: number };
@@ -12,6 +13,7 @@ export async function POST(request: Request) {
     delivery?: string;
     items?: CheckoutItem[];
     company?: string;
+    marketingConsent?: boolean;
   };
 
   if (body.company) return Response.json({ error: "Invalid checkout" }, { status: 400 });
@@ -44,10 +46,36 @@ export async function POST(request: Request) {
     customerName,
     customerReference: `${email} · ${phone} · ${delivery}`,
     customerUsername: null,
+    customerEmail: email,
+    customerPhone: phone,
+    deliveryDetails: delivery,
+    marketingConsent: body.marketingConsent === true,
     items,
     currency: "MDL",
   });
+  async function notifyCustomer(paymentUrl?: string | null) {
+    if (!orderEmailConfigured()) return;
+    try {
+      const emailResult = await sendOrderConfirmation({
+        orderId: order.id,
+        orderNumber: order.orderNumber,
+        customerName,
+        customerEmail: email,
+        items,
+        total: order.total,
+        currency: order.currency,
+        paymentUrl,
+      });
+      if (emailResult.status === "sent") {
+        await recordConfirmationEmail(order.id, { status: "sent", messageId: emailResult.messageId });
+      }
+    } catch (error) {
+      console.error("Could not send order confirmation email", error);
+      await recordConfirmationEmail(order.id, { status: "failed" });
+    }
+  }
   if (!maibCheckoutConfigured()) {
+    await notifyCustomer();
     return Response.json({ ...order, paymentSetupRequired: true }, { status: 202 });
   }
   try {
@@ -70,9 +98,11 @@ export async function POST(request: Request) {
       publicOrigin: origin,
     });
     await attachPaymentSession({ orderId: order.id, provider: "maib", ...checkout });
+    await notifyCustomer(checkout.url);
     return Response.json({ ...order, paymentStatus: "awaiting_payment", checkoutUrl: checkout.url }, { status: 201 });
   } catch (error) {
     console.error("Could not create maib checkout", error);
+    await notifyCustomer();
     return Response.json({ ...order, paymentSetupRequired: true }, { status: 202 });
   }
 }

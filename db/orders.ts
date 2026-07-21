@@ -29,6 +29,9 @@ export async function ensureOrdersSchema() {
       customer_name TEXT NOT NULL,
       customer_reference TEXT NOT NULL,
       customer_username TEXT,
+      customer_email TEXT,
+      customer_phone TEXT,
+      delivery_details TEXT,
       currency TEXT NOT NULL,
       total INTEGER NOT NULL,
       payment_status TEXT NOT NULL DEFAULT 'setup_required',
@@ -38,6 +41,8 @@ export async function ensureOrdersSchema() {
       payment_method TEXT,
       payment_expires_at TEXT,
       paid_at TEXT,
+      confirmation_email_status TEXT NOT NULL DEFAULT 'not_configured',
+      confirmation_email_id TEXT,
       created_at TEXT NOT NULL,
       updated_at TEXT NOT NULL
     )`),
@@ -56,9 +61,21 @@ export async function ensureOrdersSchema() {
       actor TEXT NOT NULL,
       created_at TEXT NOT NULL
     )`),
+    db.prepare(`CREATE TABLE IF NOT EXISTS customers (
+      id TEXT PRIMARY KEY,
+      name TEXT NOT NULL,
+      email TEXT NOT NULL UNIQUE,
+      phone TEXT NOT NULL,
+      marketing_consent INTEGER NOT NULL DEFAULT 0,
+      marketing_consent_at TEXT,
+      first_order_at TEXT NOT NULL,
+      last_order_at TEXT NOT NULL,
+      order_count INTEGER NOT NULL DEFAULT 1
+    )`),
     db.prepare("CREATE INDEX IF NOT EXISTS orders_created_at_idx ON orders(created_at DESC)"),
     db.prepare("CREATE INDEX IF NOT EXISTS orders_source_idx ON orders(source)"),
     db.prepare("CREATE INDEX IF NOT EXISTS order_items_order_id_idx ON order_items(order_id)"),
+    db.prepare("CREATE INDEX IF NOT EXISTS customers_last_order_at_idx ON customers(last_order_at DESC)"),
   ]);
 
   const columns = await db.prepare("PRAGMA table_info(orders)").all<{ name: string }>();
@@ -71,6 +88,11 @@ export async function ensureOrdersSchema() {
     ["payment_method", "ALTER TABLE orders ADD COLUMN payment_method TEXT"],
     ["payment_expires_at", "ALTER TABLE orders ADD COLUMN payment_expires_at TEXT"],
     ["paid_at", "ALTER TABLE orders ADD COLUMN paid_at TEXT"],
+    ["customer_email", "ALTER TABLE orders ADD COLUMN customer_email TEXT"],
+    ["customer_phone", "ALTER TABLE orders ADD COLUMN customer_phone TEXT"],
+    ["delivery_details", "ALTER TABLE orders ADD COLUMN delivery_details TEXT"],
+    ["confirmation_email_status", "ALTER TABLE orders ADD COLUMN confirmation_email_status TEXT NOT NULL DEFAULT 'not_configured'"],
+    ["confirmation_email_id", "ALTER TABLE orders ADD COLUMN confirmation_email_id TEXT"],
   ];
   for (const [name, sql] of missingColumns) {
     if (!existingColumns.has(name)) await db.prepare(sql).run();
@@ -157,6 +179,10 @@ export async function createOrder(input: {
   customerName: string;
   customerReference: string;
   customerUsername?: string | null;
+  customerEmail?: string | null;
+  customerPhone?: string | null;
+  deliveryDetails?: string | null;
+  marketingConsent?: boolean;
   items: Array<{ sku: string; name: string; quantity: number; unitPrice: number }>;
   currency: string;
   paymentStatus?: PaymentStatus;
@@ -167,19 +193,58 @@ export async function createOrder(input: {
   const orderNumber = `QI-${now.slice(2, 10).replaceAll("-", "")}-${id.slice(0, 6).toUpperCase()}`;
   const total = input.items.reduce((sum, item) => sum + item.quantity * item.unitPrice, 0);
   const db = d1();
-  await db.batch([
+  const statements = [
     db.prepare(`INSERT INTO orders
-      (id, order_number, source, status, customer_name, customer_reference, customer_username, currency, total, payment_status, created_at, updated_at)
-      VALUES (?, ?, ?, 'new', ?, ?, ?, ?, ?, ?, ?, ?)`)
-      .bind(id, orderNumber, input.source, input.customerName, input.customerReference, input.customerUsername ?? null, input.currency, total, input.paymentStatus ?? "setup_required", now, now),
+      (id, order_number, source, status, customer_name, customer_reference, customer_username,
+       customer_email, customer_phone, delivery_details, currency, total, payment_status,
+       confirmation_email_status, created_at, updated_at)
+      VALUES (?, ?, ?, 'new', ?, ?, ?, ?, ?, ?, ?, ?, ?, 'not_configured', ?, ?)`)
+      .bind(id, orderNumber, input.source, input.customerName, input.customerReference, input.customerUsername ?? null,
+        input.customerEmail ?? null, input.customerPhone ?? null, input.deliveryDetails ?? null,
+        input.currency, total, input.paymentStatus ?? "setup_required", now, now),
     ...input.items.map((item) => db.prepare(`INSERT INTO order_items
       (id, order_id, sku, name, quantity, unit_price) VALUES (?, ?, ?, ?, ?, ?)`)
       .bind(crypto.randomUUID(), id, item.sku, item.name, item.quantity, item.unitPrice)),
     db.prepare(`INSERT INTO order_events
       (id, order_id, event, actor, created_at) VALUES (?, ?, 'created', ?, ?)`)
       .bind(crypto.randomUUID(), id, `${input.source}:${input.customerReference}`, now),
-  ]);
+  ];
+  if (input.customerEmail && input.customerPhone) {
+    statements.push(db.prepare(`INSERT INTO customers
+      (id, name, email, phone, marketing_consent, marketing_consent_at, first_order_at, last_order_at, order_count)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1)
+      ON CONFLICT(email) DO UPDATE SET
+        name = excluded.name,
+        phone = excluded.phone,
+        marketing_consent = CASE WHEN excluded.marketing_consent = 1 THEN 1 ELSE customers.marketing_consent END,
+        marketing_consent_at = CASE WHEN excluded.marketing_consent = 1 THEN excluded.marketing_consent_at ELSE customers.marketing_consent_at END,
+        last_order_at = excluded.last_order_at,
+        order_count = customers.order_count + 1`)
+      .bind(crypto.randomUUID(), input.customerName, input.customerEmail, input.customerPhone,
+        input.marketingConsent ? 1 : 0, input.marketingConsent ? now : null, now, now));
+  }
+  await db.batch(statements);
   return { id, orderNumber, total, currency: input.currency, status: "new" as const, paymentStatus: input.paymentStatus ?? "setup_required" };
+}
+
+export async function recordConfirmationEmail(orderId: string, result: { status: "sent" | "failed"; messageId?: string | null }) {
+  await ensureOrdersSchema();
+  const now = new Date().toISOString();
+  await d1().batch([
+    d1().prepare("UPDATE orders SET confirmation_email_status = ?, confirmation_email_id = ?, updated_at = ? WHERE id = ?")
+      .bind(result.status, result.messageId ?? null, now, orderId),
+    d1().prepare(`INSERT INTO order_events (id, order_id, event, actor, created_at)
+      VALUES (?, ?, ?, 'resend', ?)`)
+      .bind(crypto.randomUUID(), orderId, `confirmation_email_${result.status}`, now),
+  ]);
+}
+
+export async function listCustomers() {
+  await ensureOrdersSchema();
+  const result = await d1().prepare(`SELECT id, name, email, phone, marketing_consent,
+    marketing_consent_at, first_order_at, last_order_at, order_count
+    FROM customers ORDER BY last_order_at DESC LIMIT 500`).all<D1ResultRow>();
+  return result.results;
 }
 
 export async function attachPaymentSession(input: {
@@ -245,6 +310,8 @@ export async function listOrders() {
       o.customer_reference, o.customer_username, o.currency, o.total,
       o.payment_status, o.payment_provider, o.payment_reference, o.payment_method,
       o.payment_expires_at, o.paid_at,
+      o.customer_email, o.customer_phone, o.delivery_details,
+      o.confirmation_email_status,
       o.created_at, o.updated_at,
       GROUP_CONCAT(i.sku, ', ') AS sku,
       GROUP_CONCAT(i.name || ' ×' || i.quantity, ', ') AS item_name,
