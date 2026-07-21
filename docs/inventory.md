@@ -17,5 +17,6 @@ price and channel presentation.
 - `/api/inventory/website` contains only website-enabled products.
 - `/api/inventory/telegram` contains only Telegram-enabled products.
 
-Decap is available at `/admin/`. Its production Git backend still needs to be
-connected to the repository provider that will own inventory edits.
+Decap is available at `/admin/` and commits inventory edits to
+`CosmaK-47/QualityImport` on the `main` branch. Production access still needs a
+GitHub OAuth provider so Decap can authenticate editors securely.

@@ -1,8 +1,7 @@
-# Local editing works with `npx decap-server` and `local_backend: true`.
-# Replace the backend below with the production Git provider and authentication
-# settings once the inventory repository has been selected.
 backend:
-  name: test-repo
+  name: github
+  repo: CosmaK-47/QualityImport
+  branch: main
 
 local_backend: true
 publish_mode: editorial_workflow
