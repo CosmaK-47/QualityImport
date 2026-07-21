@@ -46,7 +46,7 @@ export default async function StaffOrdersPage() {
     <main className={styles.shell}>
       <header className={styles.header}>
         <div className={styles.brand}><span>QI</span><div><b>Quality Imports</b><small>Order operations</small></div></div>
-        <div className={styles.account}><span>{role}</span><div>{user.displayName}<small>{user.email}</small></div><a href={chatGPTSignOutPath("/")}>Sign out</a></div>
+        <div className={styles.account}><span>{role}</span><div>{user.displayName}<small>{user.email}</small></div>{role === "admin" && <a href="/staff/team">Team</a>}<a href={chatGPTSignOutPath("/")}>Sign out</a></div>
       </header>
 
       <section className={styles.intro}>

@@ -54,11 +54,68 @@ export async function ensureOrdersSchema() {
   ]);
 }
 
-function configuredAdminEmails() {
+export function configuredAdminEmails() {
   const value = (env as unknown as Record<string, unknown>).STAFF_ADMIN_EMAILS;
   return typeof value === "string"
     ? value.split(",").map((email) => email.trim().toLowerCase()).filter(Boolean)
     : [];
+}
+
+export type StaffAccount = {
+  email: string;
+  role: StaffRole;
+  active: boolean;
+  createdAt: string;
+  managedByEnvironment: boolean;
+};
+
+export async function listStaffAccounts(): Promise<StaffAccount[]> {
+  await ensureOrdersSchema();
+  const result = await d1().prepare(
+    "SELECT email, role, active, created_at FROM staff_accounts ORDER BY created_at ASC",
+  ).all<{ email: string; role: StaffRole; active: number; created_at: string }>();
+  const databaseAccounts = result.results.map((row) => ({
+    email: row.email,
+    role: row.role,
+    active: Boolean(row.active),
+    createdAt: row.created_at,
+    managedByEnvironment: false,
+  }));
+  const existingEmails = new Set(databaseAccounts.map((account) => account.email));
+  const environmentAccounts = configuredAdminEmails()
+    .filter((email) => !existingEmails.has(email))
+    .map((email) => ({
+      email,
+      role: "admin" as const,
+      active: true,
+      createdAt: "",
+      managedByEnvironment: true,
+    }));
+  return [...environmentAccounts, ...databaseAccounts];
+}
+
+export async function upsertStaffAccount(email: string, role: StaffRole) {
+  await ensureOrdersSchema();
+  const normalizedEmail = email.trim().toLowerCase();
+  const now = new Date().toISOString();
+  await d1().prepare(`INSERT INTO staff_accounts (email, role, active, created_at)
+    VALUES (?, ?, 1, ?)
+    ON CONFLICT(email) DO UPDATE SET role = excluded.role, active = 1`)
+    .bind(normalizedEmail, role, now).run();
+  return { email: normalizedEmail, role, active: true };
+}
+
+export async function updateStaffAccount(email: string, changes: { role?: StaffRole; active?: boolean }) {
+  await ensureOrdersSchema();
+  const normalizedEmail = email.trim().toLowerCase();
+  const current = await d1().prepare("SELECT role, active FROM staff_accounts WHERE email = ?")
+    .bind(normalizedEmail).first<{ role: StaffRole; active: number }>();
+  if (!current) return null;
+  const role = changes.role ?? current.role;
+  const active = changes.active ?? Boolean(current.active);
+  await d1().prepare("UPDATE staff_accounts SET role = ?, active = ? WHERE email = ?")
+    .bind(role, active ? 1 : 0, normalizedEmail).run();
+  return { email: normalizedEmail, role, active };
 }
 
 export async function getStaffRole(email: string): Promise<StaffRole | null> {
