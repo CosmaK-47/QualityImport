@@ -1,23 +1,29 @@
 # QI Telegram Bot
 
-This folder is reserved for the independent Telegram bot application.
+The bot reads the centralized Telegram channel feed from the website and offers
+RO, RU and EN menus for stock, preorder and product categories.
 
-The bot must treat the website's channel feed as read-only and fetch:
+## Local setup
 
-```text
-GET /api/inventory/telegram
+1. Copy `.env.example` to `.env`.
+2. Paste the BotFather token into `.env`. Never commit or share this file.
+3. Start the website from the repository root so the local inventory feed is available.
+4. In a second terminal, start the bot:
+
+```bash
+cd telegram-bot
+npm start
 ```
 
-Only products with `telegram.enabled: true` are returned. Shared price, stock,
-SKU and availability come from `content/inventory.json`; Telegram-specific name
-and message fields do not affect the website.
+Open the bot's username in Telegram and tap **Start**. Stop the local bot with
+`Ctrl+C`.
 
-## Planned environment
+## Inventory behavior
 
-```text
-TELEGRAM_BOT_TOKEN=
-INVENTORY_API_URL=https://your-store.example/api/inventory/telegram
-```
+The bot fetches `GET /api/inventory/telegram`. Only products with
+`telegram.enabled: true` are returned. Shared price, stock, SKU and availability
+come from `content/inventory.json`; Telegram-specific name and message fields do
+not affect the website.
 
-The bot code will be added here after the Telegram bot token and deployment
-target are selected. Never commit the token.
+For production, set `INVENTORY_API_URL` to the deployed website endpoint and
+store `TELEGRAM_BOT_TOKEN` in the hosting provider's protected secret storage.
