@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { getWebsiteProducts } from "@/lib/inventory";
 
 type Language = "RO" | "RU" | "EN";
@@ -247,19 +247,55 @@ const copy = {
 } as const;
 
 const categoryKeys: Category[] = ["all", "outerwear", "tops", "bottoms", "shoes"];
+const BAG_STORAGE_KEY = "qi-shopping-bag-v1";
 
 export default function Home() {
   const [language, setLanguage] = useState<Language>("RO");
   const [category, setCategory] = useState<Category>("all");
   const [availability, setAvailability] = useState<Availability>("all");
-  const [bagCount, setBagCount] = useState(0);
   const [bagItems, setBagItems] = useState<Record<string, number>>({});
+  const [bagStorageReady, setBagStorageReady] = useState(false);
   const [bagOpen, setBagOpen] = useState(false);
   const [checkoutBusy, setCheckoutBusy] = useState(false);
   const [checkoutResult, setCheckoutResult] = useState("");
   const [menuOpen, setMenuOpen] = useState(false);
   const [statusMessage, setStatusMessage] = useState("");
   const t = copy[language];
+  const bagCount = useMemo(
+    () => Object.values(bagItems).reduce((sum, quantity) => sum + quantity, 0),
+    [bagItems],
+  );
+
+  useEffect(() => {
+    try {
+      const savedBag = JSON.parse(window.localStorage.getItem(BAG_STORAGE_KEY) ?? "{}") as Record<string, unknown>;
+      const availableProductIds = new Set(products.map((product) => product.id));
+      const restoredBag = Object.fromEntries(
+        Object.entries(savedBag).filter(
+          ([productId, quantity]) =>
+            availableProductIds.has(productId) &&
+            typeof quantity === "number" &&
+            Number.isInteger(quantity) &&
+            quantity > 0 &&
+            quantity <= 99,
+        ),
+      ) as Record<string, number>;
+      setBagItems(restoredBag);
+    } catch {
+      window.localStorage.removeItem(BAG_STORAGE_KEY);
+    } finally {
+      setBagStorageReady(true);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!bagStorageReady) return;
+    try {
+      window.localStorage.setItem(BAG_STORAGE_KEY, JSON.stringify(bagItems));
+    } catch {
+      // The bag still works for this visit if browser storage is unavailable.
+    }
+  }, [bagItems, bagStorageReady]);
 
   const visibleProducts = useMemo(
     () =>
@@ -273,7 +309,6 @@ export default function Home() {
 
   function addToBag(productId: string) {
     setBagItems((items) => ({ ...items, [productId]: (items[productId] ?? 0) + 1 }));
-    setBagCount((value) => value + 1);
     setStatusMessage(t.added);
     window.setTimeout(() => setStatusMessage(""), 1800);
   }
@@ -283,7 +318,6 @@ export default function Home() {
       const next = Math.max(0, (items[productId] ?? 0) + change);
       const updated = { ...items };
       if (next === 0) delete updated[productId]; else updated[productId] = next;
-      setBagCount(Object.values(updated).reduce((sum, quantity) => sum + quantity, 0));
       return updated;
     });
   }
@@ -306,7 +340,7 @@ export default function Home() {
     const result = await response.json();
     if (response.ok) {
       setCheckoutResult(`Order ${result.orderNumber} was placed successfully.`);
-      setBagItems({}); setBagCount(0); formElement.reset();
+      setBagItems({}); formElement.reset();
     } else setCheckoutResult(result.error ?? "The order could not be placed.");
     setCheckoutBusy(false);
   }
