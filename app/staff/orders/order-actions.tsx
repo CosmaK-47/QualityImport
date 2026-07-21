@@ -16,18 +16,19 @@ export default function OrderActions({ orderId, orderNumber, status, paymentStat
   const router = useRouter();
   const [busy, setBusy] = useState("");
   const [error, setError] = useState("");
+  const [notice, setNotice] = useState("");
 
   async function update(action: string, extra: Record<string, string> = {}) {
     if (action === "cancel" && !window.confirm(`Cancel ${orderNumber}?`)) return;
-    setBusy(action); setError("");
+    setBusy(action); setError(""); setNotice("");
     const response = await fetch("/api/staff/orders", {
       method: "PATCH",
       headers: { "content-type": "application/json" },
       body: JSON.stringify({ orderId, action, ...extra }),
     });
-    const result = await response.json() as { error?: string };
+    const result = await response.json() as { error?: string; notice?: string };
     if (!response.ok) setError(result.error ?? "The order could not be updated.");
-    else router.refresh();
+    else { if (result.notice) setNotice(result.notice); router.refresh(); }
     setBusy("");
   }
 
@@ -50,5 +51,6 @@ export default function OrderActions({ orderId, orderNumber, status, paymentStat
     {status === "ready" && paymentStatus === "paid" && <button disabled={Boolean(busy)} onClick={() => void update("delivered")}>Mark delivered</button>}
     {canManagePayment && <button className={styles.danger} disabled={Boolean(busy)} onClick={() => void update("cancel")}>Cancel</button>}
     {error && <small className={styles.error}>{error}</small>}
+    {notice && <small className={styles.notice}>{notice}</small>}
   </div>;
 }

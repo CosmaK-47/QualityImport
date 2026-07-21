@@ -31,6 +31,7 @@ export async function ensureOrdersSchema() {
       customer_username TEXT,
       customer_email TEXT,
       customer_phone TEXT,
+      customer_language TEXT,
       delivery_details TEXT,
       currency TEXT NOT NULL,
       total INTEGER NOT NULL,
@@ -90,6 +91,7 @@ export async function ensureOrdersSchema() {
     ["paid_at", "ALTER TABLE orders ADD COLUMN paid_at TEXT"],
     ["customer_email", "ALTER TABLE orders ADD COLUMN customer_email TEXT"],
     ["customer_phone", "ALTER TABLE orders ADD COLUMN customer_phone TEXT"],
+    ["customer_language", "ALTER TABLE orders ADD COLUMN customer_language TEXT"],
     ["delivery_details", "ALTER TABLE orders ADD COLUMN delivery_details TEXT"],
     ["confirmation_email_status", "ALTER TABLE orders ADD COLUMN confirmation_email_status TEXT NOT NULL DEFAULT 'not_configured'"],
     ["confirmation_email_id", "ALTER TABLE orders ADD COLUMN confirmation_email_id TEXT"],
@@ -181,6 +183,7 @@ export async function createOrder(input: {
   customerUsername?: string | null;
   customerEmail?: string | null;
   customerPhone?: string | null;
+  customerLanguage?: string | null;
   deliveryDetails?: string | null;
   marketingConsent?: boolean;
   items: Array<{ sku: string; name: string; quantity: number; unitPrice: number }>;
@@ -196,11 +199,11 @@ export async function createOrder(input: {
   const statements = [
     db.prepare(`INSERT INTO orders
       (id, order_number, source, status, customer_name, customer_reference, customer_username,
-       customer_email, customer_phone, delivery_details, currency, total, payment_status,
+       customer_email, customer_phone, customer_language, delivery_details, currency, total, payment_status,
        confirmation_email_status, created_at, updated_at)
-      VALUES (?, ?, ?, 'new', ?, ?, ?, ?, ?, ?, ?, ?, ?, 'not_configured', ?, ?)`)
+      VALUES (?, ?, ?, 'new', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'not_configured', ?, ?)`)
       .bind(id, orderNumber, input.source, input.customerName, input.customerReference, input.customerUsername ?? null,
-        input.customerEmail ?? null, input.customerPhone ?? null, input.deliveryDetails ?? null,
+        input.customerEmail ?? null, input.customerPhone ?? null, input.customerLanguage ?? null, input.deliveryDetails ?? null,
         input.currency, total, input.paymentStatus ?? "setup_required", now, now),
     ...input.items.map((item) => db.prepare(`INSERT INTO order_items
       (id, order_id, sku, name, quantity, unit_price) VALUES (?, ?, ?, ?, ?, ?)`)
@@ -310,6 +313,27 @@ export async function getOrderWorkflow(orderId: string) {
     .bind(orderId).first<{ id: string; status: OrderStatus; payment_status: PaymentStatus }>();
 }
 
+export async function getOrderForConfirmation(orderId: string) {
+  await ensureOrdersSchema();
+  const order = await d1().prepare(`SELECT id, order_number, source, status, customer_name,
+    customer_reference, customer_email, customer_phone, customer_language, currency, total,
+    payment_status, payment_url, created_at
+    FROM orders WHERE id = ? LIMIT 1`).bind(orderId).first<{
+      id: string; order_number: string; source: OrderSource; status: OrderStatus;
+      customer_name: string; customer_reference: string; customer_email: string | null;
+      customer_phone: string | null; customer_language: string | null; currency: string;
+      total: number; payment_status: PaymentStatus; payment_url: string | null; created_at: string;
+    }>();
+  if (!order) return null;
+  const items = await d1().prepare(`SELECT sku, name, quantity, unit_price
+    FROM order_items WHERE order_id = ? ORDER BY rowid`).bind(orderId).all<{
+      sku: string; name: string; quantity: number; unit_price: number;
+    }>();
+  return { ...order, items: items.results.map((item) => ({
+    sku: item.sku, name: item.name, quantity: item.quantity, unitPrice: item.unit_price,
+  })) };
+}
+
 export async function updateOrderStatus(input: {
   orderId: string;
   status: OrderStatus;
@@ -346,7 +370,7 @@ export async function listOrders() {
       o.customer_reference, o.customer_username, o.currency, o.total,
       o.payment_status, o.payment_provider, o.payment_reference, o.payment_method,
       o.payment_expires_at, o.paid_at,
-      o.customer_email, o.customer_phone, o.delivery_details,
+      o.customer_email, o.customer_phone, o.customer_language, o.delivery_details,
       o.confirmation_email_status,
       o.created_at, o.updated_at,
       GROUP_CONCAT(i.sku, ', ') AS sku,

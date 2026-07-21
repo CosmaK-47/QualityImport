@@ -1,6 +1,5 @@
 import inventoryData from "@/content/inventory.json";
-import { attachPaymentSession, createOrder } from "@/db/orders";
-import { createMaibCheckout, maibCheckoutConfigured } from "@/lib/payments/maib";
+import { createOrder } from "@/db/orders";
 import { env } from "cloudflare:workers";
 
 function authorized(request: Request) {
@@ -41,32 +40,9 @@ export async function POST(request: Request) {
     customerUsername: body.telegramUsername ? String(body.telegramUsername).slice(0, 80) : null,
     customerEmail: email,
     customerPhone: phone,
+    customerLanguage: body.language === "ru" || body.language === "en" ? body.language : "ro",
     items: [{ sku: product.sku, name: product.telegram.name, quantity, unitPrice: product.price }],
     currency: product.currency,
   });
-  if (!maibCheckoutConfigured()) {
-    return Response.json({ ...order, paymentSetupRequired: true }, { status: 202 });
-  }
-  try {
-    const checkout = await createMaibCheckout({
-      orderId: order.id,
-      orderNumber: order.orderNumber,
-      total: order.total,
-      currency: order.currency,
-      createdAt: new Date().toISOString(),
-      items: [{ sku: product.sku, name: product.telegram.name, quantity, unitPrice: product.price }],
-      customer: {
-        name: String(body.customerName || body.telegramUsername || "Telegram customer").slice(0, 120),
-        email,
-        phone,
-      },
-      language: body.language === "ru" || body.language === "en" ? body.language : "ro",
-      publicOrigin: new URL(request.url).origin,
-    });
-    await attachPaymentSession({ orderId: order.id, provider: "maib", ...checkout });
-    return Response.json({ ...order, paymentStatus: "awaiting_payment", checkoutUrl: checkout.url }, { status: 201 });
-  } catch (error) {
-    console.error("Could not create maib checkout", error);
-    return Response.json({ ...order, paymentSetupRequired: true }, { status: 202 });
-  }
+  return Response.json({ ...order, paymentPendingConfirmation: true }, { status: 201 });
 }
