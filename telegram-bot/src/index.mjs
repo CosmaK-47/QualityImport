@@ -49,6 +49,15 @@ const copy = {
     item: "Produs",
     pieces: "bucăți disponibile",
     order: "Comandă acest produs",
+    addToBag: "Adaugă în coș",
+    bag: "Coșul meu",
+    bagTitle: "Coșul tău",
+    bagEmpty: "Coșul este gol. Adaugă produse înainte de finalizare.",
+    addedToBag: "Produs adăugat în coș.",
+    remove: "Șterge",
+    checkout: "Finalizează comanda",
+    continueShopping: "Continuă cumpărăturile",
+    total: "Total",
     confirmOrder: "Confirmă comanda",
     cancelOrder: "Anulează",
     orderQuestion: "Confirmi o comandă de 1 bucată? Echipa QI te va contacta în Telegram pentru mărime și livrare.",
@@ -80,6 +89,15 @@ const copy = {
     item: "Товар",
     pieces: "штук в наличии",
     order: "Заказать товар",
+    addToBag: "Добавить в корзину",
+    bag: "Моя корзина",
+    bagTitle: "Ваша корзина",
+    bagEmpty: "Корзина пуста. Добавьте товары перед оформлением.",
+    addedToBag: "Товар добавлен в корзину.",
+    remove: "Удалить",
+    checkout: "Оформить заказ",
+    continueShopping: "Продолжить покупки",
+    total: "Итого",
     confirmOrder: "Подтвердить заказ",
     cancelOrder: "Отмена",
     orderQuestion: "Подтвердить заказ 1 штуки? Команда QI свяжется с вами в Telegram для уточнения размера и доставки.",
@@ -111,6 +129,15 @@ const copy = {
     item: "Product",
     pieces: "pieces available",
     order: "Order this product",
+    addToBag: "Add to bag",
+    bag: "My bag",
+    bagTitle: "Your bag",
+    bagEmpty: "Your bag is empty. Add products before checkout.",
+    addedToBag: "Product added to your bag.",
+    remove: "Remove",
+    checkout: "Complete order",
+    continueShopping: "Continue shopping",
+    total: "Total",
     confirmOrder: "Confirm order",
     cancelOrder: "Cancel",
     orderQuestion: "Confirm an order for 1 item? The QI team will contact you in Telegram about size and delivery.",
@@ -132,6 +159,7 @@ const copy = {
 
 const userLanguages = new Map();
 const pendingOrders = new Map();
+const userCarts = new Map();
 let offset = 0;
 let stopping = false;
 
@@ -186,6 +214,7 @@ function languageKeyboard() {
 function mainKeyboard(language) {
   const t = copy[language];
   return { inline_keyboard: [
+    [{ text: `🛍 ${t.bag}`, callback_data: "cart:view" }],
     [
       { text: `✅ ${t.stock}`, callback_data: "filter:stock" },
       { text: `🕓 ${t.preorder}`, callback_data: "filter:preorder" },
@@ -302,7 +331,7 @@ function productKeyboard(language, filter, position, total) {
   const previous = (position - 1 + total) % total;
   const next = (position + 1) % total;
   return { inline_keyboard: [
-    [{ text: `＋ ${t.order}`, callback_data: `order:${filter}:${position}` }],
+    [{ text: `＋ ${t.addToBag}`, callback_data: `order:${filter}:${position}` }],
     [
       { text: `‹ ${t.previous}`, callback_data: `product:${filter}:${previous}` },
       { text: `${position + 1} / ${total}`, callback_data: "noop:page" },
@@ -312,14 +341,13 @@ function productKeyboard(language, filter, position, total) {
   ] };
 }
 
-async function placeTelegramOrder(sku, telegramUser, language, email, phone) {
+async function placeTelegramOrder(items, telegramUser, language, email, phone) {
   if (!orderServiceSecret || orderServiceSecret.length < 24) throw new Error("ORDER_SERVICE_SECRET is missing");
   const response = await fetch(ordersApiUrl, {
     method: "POST",
     headers: { "content-type": "application/json", authorization: `Bearer ${orderServiceSecret}` },
     body: JSON.stringify({
-      sku,
-      quantity: 1,
+      items,
       telegramUserId: String(telegramUser.id),
       telegramUsername: telegramUser.username ?? null,
       customerName: [telegramUser.first_name, telegramUser.last_name].filter(Boolean).join(" "),
@@ -332,6 +360,45 @@ async function placeTelegramOrder(sku, telegramUser, language, email, phone) {
   const result = await response.json();
   if (!response.ok) throw new Error(result.error ?? `Order request failed with ${response.status}`);
   return result;
+}
+
+function addCartItem(chatId, sku, change = 1) {
+  const cart = userCarts.get(chatId) ?? new Map();
+  const quantity = Math.max(0, Math.min(20, (cart.get(sku) ?? 0) + change));
+  if (quantity === 0) cart.delete(sku); else cart.set(sku, quantity);
+  if (cart.size) userCarts.set(chatId, cart); else userCarts.delete(chatId);
+}
+
+async function showCart(chatId, language) {
+  const t = copy[language];
+  const cart = userCarts.get(chatId);
+  const products = await fetchProducts();
+  const items = cart ? [...cart.entries()].map(([sku, quantity]) => {
+    const product = products.find((candidate) => candidate.sku === sku);
+    return product ? { ...product, quantity } : null;
+  }).filter(Boolean) : [];
+  if (!items.length) {
+    await sendMessage(chatId, t.bagEmpty, { inline_keyboard: [[{ text: `← ${t.continueShopping}`, callback_data: "menu:main" }]] });
+    return;
+  }
+  const total = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
+  const lines = items.flatMap((item, index) => [
+    `<b>${index + 1}. ${escapeHtml(item.name)}</b>`,
+    `<code>${escapeHtml(item.sku)}</code> · ${item.quantity} × ${escapeHtml(formatPrice(item.price, item.currency))}`,
+  ]);
+  const controls = items.flatMap((item) => [[
+    { text: "−", callback_data: `cart:minus:${item.sku}` },
+    { text: String(item.quantity), callback_data: "noop:quantity" },
+    { text: "+", callback_data: `cart:plus:${item.sku}` },
+    { text: `× ${t.remove}`, callback_data: `cart:remove:${item.sku}` },
+  ]]);
+  await sendMessage(chatId, `<b>🛍 ${escapeHtml(t.bagTitle)}</b>\n\n${lines.join("\n")}\n\n<b>${escapeHtml(t.total)}: ${escapeHtml(formatPrice(total, items[0].currency))}</b>`, {
+    inline_keyboard: [
+      ...controls,
+      [{ text: `✓ ${t.checkout}`, callback_data: "cart:checkout" }],
+      [{ text: `← ${t.continueShopping}`, callback_data: "menu:main" }],
+    ],
+  });
 }
 
 async function showCatalog(chatId, language, filter, requestedPosition = 0, messageId) {
@@ -401,7 +468,8 @@ async function handleMessage(message) {
     }
     pendingOrders.delete(chatId);
     try {
-      const order = await placeTelegramOrder(pendingOrder.sku, message.from ?? pendingOrder.telegramUser, language, pendingOrder.email, phone);
+      const order = await placeTelegramOrder(pendingOrder.items, message.from ?? pendingOrder.telegramUser, language, pendingOrder.email, phone);
+      userCarts.delete(chatId);
       const confirmation = `✓ <b>${escapeHtml(copy[language].orderSuccess)}</b>\n<code>${escapeHtml(order.orderNumber)}</code>\n\n${escapeHtml(order.checkoutUrl ? copy[language].paymentRequired : copy[language].paymentSetup)}`;
       await sendMessage(chatId, confirmation, removeReplyKeyboard);
       const keyboard = order.checkoutUrl
@@ -447,15 +515,28 @@ async function handleCallback(callback) {
     const products = selectProducts(await fetchProducts(), value);
     const product = products[Number(detail) || 0];
     if (!product) return;
-    await sendMessage(chatId, `<b>${escapeHtml(product.name)}</b>\n${escapeHtml(copy[language].orderQuestion)}`, {
+    addCartItem(chatId, product.sku);
+    await sendMessage(chatId, `✓ ${escapeHtml(copy[language].addedToBag)}\n<b>${escapeHtml(product.name)}</b>`, {
       inline_keyboard: [[
-        { text: `✓ ${copy[language].confirmOrder}`, callback_data: `confirm:${product.sku}` },
-        { text: copy[language].cancelOrder, callback_data: "menu:main" },
+        { text: `🛍 ${copy[language].bag}`, callback_data: "cart:view" },
+        { text: copy[language].continueShopping, callback_data: "menu:main" },
       ]],
     });
   } else if (action === "confirm") {
-    pendingOrders.set(chatId, { step: "email", sku: value, telegramUser: callback.from });
-    await sendMessage(chatId, copy[language].askEmail);
+    addCartItem(chatId, value);
+    await showCart(chatId, language);
+  } else if (action === "cart") {
+    if (value === "plus") addCartItem(chatId, detail, 1);
+    if (value === "minus") addCartItem(chatId, detail, -1);
+    if (value === "remove") addCartItem(chatId, detail, -20);
+    if (value === "checkout") {
+      const cart = userCarts.get(chatId);
+      if (!cart?.size) { await showCart(chatId, language); return; }
+      pendingOrders.set(chatId, { step: "email", items: [...cart.entries()].map(([sku, quantity]) => ({ sku, quantity })), telegramUser: callback.from });
+      await sendMessage(chatId, copy[language].askEmail);
+      return;
+    }
+    await showCart(chatId, language);
   } else if (callback.data === "menu:categories") {
     await sendMessage(chatId, copy[language].categories, categoryKeyboard(language));
   } else if (callback.data === "menu:language") {
