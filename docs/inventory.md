@@ -25,3 +25,10 @@ GitHub OAuth provider so Decap can authenticate editors securely.
 Product images uploaded through Decap are stored in `public/uploads/products/`.
 The bot uploads these files directly during local testing and uses their public
 website URL after deployment.
+
+## Orders
+
+Private order and staff data is stored in D1, never in this inventory file.
+Telegram creates orders through the protected `/api/orders/telegram` service;
+staff review combined Website and Telegram orders at `/staff/orders`. Configure
+`STAFF_ADMIN_EMAILS` and `ORDER_SERVICE_SECRET` as protected runtime values.

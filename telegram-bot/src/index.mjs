@@ -26,6 +26,8 @@ await loadLocalEnvironment();
 
 const token = process.env.TELEGRAM_BOT_TOKEN;
 const inventoryUrl = process.env.INVENTORY_API_URL ?? "http://localhost:3000/api/inventory/telegram";
+const ordersApiUrl = process.env.ORDERS_API_URL ?? "http://localhost:3000/api/orders/telegram";
+const orderServiceSecret = process.env.ORDER_SERVICE_SECRET;
 
 if (!token) {
   console.error("Missing TELEGRAM_BOT_TOKEN. Add it to telegram-bot/.env and restart the bot.");
@@ -46,6 +48,12 @@ const copy = {
     next: "Următorul",
     item: "Produs",
     pieces: "bucăți disponibile",
+    order: "Comandă acest produs",
+    confirmOrder: "Confirmă comanda",
+    cancelOrder: "Anulează",
+    orderQuestion: "Confirmi o comandă de 1 bucată? Echipa QI te va contacta în Telegram pentru mărime și livrare.",
+    orderSuccess: "Comanda a fost înregistrată. Numărul comenzii:",
+    orderUnavailable: "Comenzile nu sunt configurate încă. Te rugăm să încerci mai târziu.",
     availability: { stock: "În stoc", preorder: "Precomandă" },
     categoryNames: { outerwear: "Jachete", tops: "Topuri", bottoms: "Pantaloni", shoes: "Încălțăminte" },
   },
@@ -62,6 +70,12 @@ const copy = {
     next: "Далее",
     item: "Товар",
     pieces: "штук в наличии",
+    order: "Заказать товар",
+    confirmOrder: "Подтвердить заказ",
+    cancelOrder: "Отмена",
+    orderQuestion: "Подтвердить заказ 1 штуки? Команда QI свяжется с вами в Telegram для уточнения размера и доставки.",
+    orderSuccess: "Заказ зарегистрирован. Номер заказа:",
+    orderUnavailable: "Приём заказов ещё не настроен. Пожалуйста, попробуйте позже.",
     availability: { stock: "В наличии", preorder: "Предзаказ" },
     categoryNames: { outerwear: "Куртки", tops: "Верх", bottoms: "Брюки", shoes: "Обувь" },
   },
@@ -78,6 +92,12 @@ const copy = {
     next: "Next",
     item: "Product",
     pieces: "pieces available",
+    order: "Order this product",
+    confirmOrder: "Confirm order",
+    cancelOrder: "Cancel",
+    orderQuestion: "Confirm an order for 1 item? The QI team will contact you in Telegram about size and delivery.",
+    orderSuccess: "Your order was registered. Order number:",
+    orderUnavailable: "Ordering is not configured yet. Please try again later.",
     availability: { stock: "In stock", preorder: "Preorder" },
     categoryNames: { outerwear: "Outerwear", tops: "Tops", bottoms: "Trousers", shoes: "Shoes" },
   },
@@ -237,6 +257,7 @@ function productKeyboard(language, filter, position, total) {
   const previous = (position - 1 + total) % total;
   const next = (position + 1) % total;
   return { inline_keyboard: [
+    [{ text: `＋ ${t.order}`, callback_data: `order:${filter}:${position}` }],
     [
       { text: `‹ ${t.previous}`, callback_data: `product:${filter}:${previous}` },
       { text: `${position + 1} / ${total}`, callback_data: "noop:page" },
@@ -244,6 +265,25 @@ function productKeyboard(language, filter, position, total) {
     ],
     [{ text: `← ${t.back}`, callback_data: "menu:main" }],
   ] };
+}
+
+async function placeTelegramOrder(sku, telegramUser) {
+  if (!orderServiceSecret || orderServiceSecret.length < 24) throw new Error("ORDER_SERVICE_SECRET is missing");
+  const response = await fetch(ordersApiUrl, {
+    method: "POST",
+    headers: { "content-type": "application/json", authorization: `Bearer ${orderServiceSecret}` },
+    body: JSON.stringify({
+      sku,
+      quantity: 1,
+      telegramUserId: String(telegramUser.id),
+      telegramUsername: telegramUser.username ?? null,
+      customerName: [telegramUser.first_name, telegramUser.last_name].filter(Boolean).join(" "),
+    }),
+    signal: AbortSignal.timeout(15000),
+  });
+  const result = await response.json();
+  if (!response.ok) throw new Error(result.error ?? `Order request failed with ${response.status}`);
+  return result;
 }
 
 async function showCatalog(chatId, language, filter, requestedPosition = 0, messageId) {
@@ -312,6 +352,24 @@ async function handleCallback(callback) {
     await showCatalog(chatId, language, value);
   } else if (action === "product") {
     await showCatalog(chatId, language, value, detail, callback.message.message_id);
+  } else if (action === "order") {
+    const products = selectProducts(await fetchProducts(), value);
+    const product = products[Number(detail) || 0];
+    if (!product) return;
+    await sendMessage(chatId, `<b>${escapeHtml(product.name)}</b>\n${escapeHtml(copy[language].orderQuestion)}`, {
+      inline_keyboard: [[
+        { text: `✓ ${copy[language].confirmOrder}`, callback_data: `confirm:${product.sku}` },
+        { text: copy[language].cancelOrder, callback_data: "menu:main" },
+      ]],
+    });
+  } else if (action === "confirm") {
+    try {
+      const order = await placeTelegramOrder(value, callback.from);
+      await sendMessage(chatId, `✓ <b>${escapeHtml(copy[language].orderSuccess)}</b>\n<code>${escapeHtml(order.orderNumber)}</code>`, mainKeyboard(language));
+    } catch (error) {
+      console.error(`Could not create Telegram order: ${error.message}`);
+      await sendMessage(chatId, copy[language].orderUnavailable, mainKeyboard(language));
+    }
   } else if (callback.data === "menu:categories") {
     await sendMessage(chatId, copy[language].categories, categoryKeyboard(language));
   } else if (callback.data === "menu:language") {
