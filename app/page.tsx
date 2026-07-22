@@ -97,12 +97,15 @@ const copy = {
     productDetails: "Detalii produs",
     photos: "Fotografii",
     video: "Video",
+    certifiedVideo: "Video certificat QI",
     spin360: "Vizualizare 360°",
     spinHelp: "Trage stânga sau dreapta pentru a roti produsul.",
     materials: "Materiale și îngrijire",
     sizes: "Mărimi disponibile",
     close: "Închide",
     quantityAvailable: "bucăți disponibile",
+    videoPending: "Videoclipul certificat QI va fi disponibil în curând.",
+    spinPending: "Vizualizarea 360° va fi disponibilă după încărcarea cadrelor produsului.",
   },
   RU: {
     announcement: "Доставка по всей Молдове · Товары в наличии и избранный предзаказ",
@@ -191,12 +194,15 @@ const copy = {
     productDetails: "Описание товара",
     photos: "Фотографии",
     video: "Видео",
+    certifiedVideo: "Сертифицированное видео QI",
     spin360: "Обзор 360°",
     spinHelp: "Проведите влево или вправо, чтобы повернуть товар.",
     materials: "Материалы и уход",
     sizes: "Доступные размеры",
     close: "Закрыть",
     quantityAvailable: "штук в наличии",
+    videoPending: "Сертифицированное видео QI скоро будет доступно.",
+    spinPending: "Обзор 360° появится после загрузки кадров товара.",
   },
   EN: {
     announcement: "Delivery across Moldova · In-stock and selected preorder",
@@ -285,12 +291,15 @@ const copy = {
     productDetails: "Product details",
     photos: "Photos",
     video: "Video",
+    certifiedVideo: "QI Certified Video",
     spin360: "360° view",
     spinHelp: "Drag left or right to rotate the product.",
     materials: "Materials and care",
     sizes: "Available sizes",
     close: "Close",
     quantityAvailable: "pieces available",
+    videoPending: "The QI Certified Video will be available soon.",
+    spinPending: "The 360° view will appear after the product frames are uploaded.",
   },
 } as const;
 
@@ -672,14 +681,14 @@ export default function Home() {
           <div className="product-modal-visual">
             <div className="product-media-tabs" role="tablist" aria-label={t.productDetails}>
               <button className={productMedia === "photos" ? "active" : ""} type="button" onClick={() => setProductMedia("photos")}>{t.photos}</button>
-              {selectedProduct.video && <button className={productMedia === "video" ? "active" : ""} type="button" onClick={() => setProductMedia("video")}>{t.video}</button>}
-              {selectedProduct.spin360.length > 1 && <button className={productMedia === "spin" ? "active" : ""} type="button" onClick={() => setProductMedia("spin")}>{t.spin360}</button>}
+              <button className={productMedia === "video" ? "active" : ""} type="button" onClick={() => setProductMedia("video")}>{t.certifiedVideo}</button>
+              <button className={productMedia === "spin" ? "active" : ""} type="button" onClick={() => setProductMedia("spin")}>{t.spin360}</button>
             </div>
-            {productMedia === "video" && selectedProduct.video ? <video className="product-video" src={selectedProduct.video} controls playsInline preload="metadata" /> : productMedia === "spin" && selectedProduct.spin360.length > 1 ? <>
+            {productMedia === "video" ? selectedProduct.video ? <video className="product-video" src={selectedProduct.video} controls playsInline preload="metadata" /> : <div className="product-media-empty"><span>QI</span><b>{t.certifiedVideo}</b><p>{t.videoPending}</p></div> : productMedia === "spin" ? selectedProduct.spin360.length > 1 ? <>
               <div className="product-spin" role="img" aria-label={`${selectedProduct.name} ${t.spin360}`} style={{ backgroundImage: `url(${selectedProduct.spin360[spinFrame]})` }} onPointerDown={(event) => { spinDrag.current = { x: event.clientX, frame: spinFrame }; event.currentTarget.setPointerCapture(event.pointerId); }} onPointerMove={(event) => { if (!spinDrag.current) return; const movement = Math.round((event.clientX - spinDrag.current.x) / 14); const count = selectedProduct.spin360.length; setSpinFrame((spinDrag.current.frame - movement % count + count) % count); }} onPointerUp={(event) => { spinDrag.current = null; event.currentTarget.releasePointerCapture(event.pointerId); }} />
               <p className="spin-help">↔ {t.spinHelp}</p>
               <input className="spin-range" type="range" min="0" max={selectedProduct.spin360.length - 1} value={spinFrame} onChange={(event) => setSpinFrame(Number(event.target.value))} aria-label={t.spin360} />
-            </> : selectedProduct.gallery.length ? <>
+            </> : <div className="product-media-empty"><span>360°</span><b>{t.spin360}</b><p>{t.spinPending}</p></div> : selectedProduct.gallery.length ? <>
               <div className="product-photo" role="img" aria-label={`${selectedProduct.name} ${photoIndex + 1}`} style={{ backgroundImage: `url(${selectedProduct.gallery[photoIndex]})` }} />
               {selectedProduct.gallery.length > 1 && <div className="product-thumbnails">{selectedProduct.gallery.map((image, index) => <button type="button" key={`${image}-${index}`} className={photoIndex === index ? "active" : ""} style={{ backgroundImage: `url(${image})` }} onClick={() => setPhotoIndex(index)} aria-label={`${t.photos} ${index + 1}`} />)}</div>}
             </> : <div className={`product-modal-art art-${selectedProduct.art} tone-${selectedProduct.tone}`}><span className="product-shape"/><span className="product-line"/></div>}
