@@ -4,6 +4,8 @@ export type StaffRole = "admin" | "moderator" | "worker";
 export type OrderSource = "website" | "telegram";
 export type OrderStatus = "new" | "confirmed" | "preparing" | "ready" | "delivered" | "cancelled";
 export type PaymentStatus = "setup_required" | "awaiting_payment" | "paid" | "failed" | "expired" | "refunded";
+export type ResellerStatus = "pending" | "more_information" | "approved" | "rejected" | "suspended";
+export type ResellerPackage = "none" | "starter" | "growth" | "strategic";
 
 type D1ResultRow = Record<string, string | number | null>;
 
@@ -73,10 +75,43 @@ export async function ensureOrdersSchema() {
       last_order_at TEXT NOT NULL,
       order_count INTEGER NOT NULL DEFAULT 1
     )`),
+    db.prepare(`CREATE TABLE IF NOT EXISTS reseller_applications (
+      id TEXT PRIMARY KEY,
+      contact_name TEXT NOT NULL,
+      business_name TEXT NOT NULL,
+      email TEXT NOT NULL,
+      phone TEXT NOT NULL,
+      country TEXT NOT NULL,
+      city TEXT NOT NULL,
+      business_type TEXT NOT NULL,
+      website TEXT,
+      monthly_volume TEXT NOT NULL,
+      categories TEXT NOT NULL,
+      registration_id TEXT,
+      message TEXT,
+      status TEXT NOT NULL DEFAULT 'pending' CHECK(status IN ('pending','more_information','approved','rejected','suspended')),
+      reseller_package TEXT NOT NULL DEFAULT 'none' CHECK(reseller_package IN ('none','starter','growth','strategic')),
+      custom_discount INTEGER,
+      internal_notes TEXT,
+      reviewed_by TEXT,
+      reviewed_at TEXT,
+      created_at TEXT NOT NULL,
+      updated_at TEXT NOT NULL
+    )`),
+    db.prepare(`CREATE TABLE IF NOT EXISTS reseller_events (
+      id TEXT PRIMARY KEY,
+      reseller_id TEXT NOT NULL REFERENCES reseller_applications(id) ON DELETE CASCADE,
+      event TEXT NOT NULL,
+      actor TEXT NOT NULL,
+      created_at TEXT NOT NULL
+    )`),
     db.prepare("CREATE INDEX IF NOT EXISTS orders_created_at_idx ON orders(created_at DESC)"),
     db.prepare("CREATE INDEX IF NOT EXISTS orders_source_idx ON orders(source)"),
     db.prepare("CREATE INDEX IF NOT EXISTS order_items_order_id_idx ON order_items(order_id)"),
     db.prepare("CREATE INDEX IF NOT EXISTS customers_last_order_at_idx ON customers(last_order_at DESC)"),
+    db.prepare("CREATE INDEX IF NOT EXISTS reseller_applications_status_idx ON reseller_applications(status, created_at DESC)"),
+    db.prepare("CREATE INDEX IF NOT EXISTS reseller_applications_email_idx ON reseller_applications(email)"),
+    db.prepare("CREATE INDEX IF NOT EXISTS reseller_events_reseller_idx ON reseller_events(reseller_id, created_at DESC)"),
   ]);
 
   const columns = await db.prepare("PRAGMA table_info(orders)").all<{ name: string }>();
@@ -100,6 +135,75 @@ export async function ensureOrdersSchema() {
     if (!existingColumns.has(name)) await db.prepare(sql).run();
   }
   await db.prepare("CREATE INDEX IF NOT EXISTS orders_payment_status_idx ON orders(payment_status)").run();
+}
+
+export type ResellerApplication = {
+  id: string; contactName: string; businessName: string; email: string; phone: string;
+  country: string; city: string; businessType: string; website: string | null;
+  monthlyVolume: string; categories: string; registrationId: string | null; message: string | null;
+  status: ResellerStatus; resellerPackage: ResellerPackage; customDiscount: number | null;
+  internalNotes: string | null; reviewedBy: string | null; reviewedAt: string | null;
+  createdAt: string; updatedAt: string;
+};
+
+function resellerFromRow(row: Record<string, unknown>): ResellerApplication {
+  return {
+    id: String(row.id), contactName: String(row.contact_name), businessName: String(row.business_name),
+    email: String(row.email), phone: String(row.phone), country: String(row.country), city: String(row.city),
+    businessType: String(row.business_type), website: row.website ? String(row.website) : null,
+    monthlyVolume: String(row.monthly_volume), categories: String(row.categories),
+    registrationId: row.registration_id ? String(row.registration_id) : null,
+    message: row.message ? String(row.message) : null, status: row.status as ResellerStatus,
+    resellerPackage: row.reseller_package as ResellerPackage,
+    customDiscount: row.custom_discount === null || row.custom_discount === undefined ? null : Number(row.custom_discount),
+    internalNotes: row.internal_notes ? String(row.internal_notes) : null,
+    reviewedBy: row.reviewed_by ? String(row.reviewed_by) : null,
+    reviewedAt: row.reviewed_at ? String(row.reviewed_at) : null,
+    createdAt: String(row.created_at), updatedAt: String(row.updated_at),
+  };
+}
+
+export async function createResellerApplication(input: Omit<ResellerApplication, "id" | "status" | "resellerPackage" | "customDiscount" | "internalNotes" | "reviewedBy" | "reviewedAt" | "createdAt" | "updatedAt">) {
+  await ensureOrdersSchema();
+  const db = d1();
+  const now = new Date().toISOString();
+  const id = crypto.randomUUID();
+  const duplicate = await db.prepare("SELECT id FROM reseller_applications WHERE email = ? AND status IN ('pending','more_information','approved') LIMIT 1")
+    .bind(input.email).first<{ id: string }>();
+  if (duplicate) return { duplicate: true, id: duplicate.id };
+  await db.batch([
+    db.prepare(`INSERT INTO reseller_applications
+      (id, contact_name, business_name, email, phone, country, city, business_type, website,
+       monthly_volume, categories, registration_id, message, status, reseller_package, created_at, updated_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', 'none', ?, ?)`)
+      .bind(id, input.contactName, input.businessName, input.email, input.phone, input.country, input.city,
+        input.businessType, input.website, input.monthlyVolume, input.categories, input.registrationId, input.message, now, now),
+    db.prepare("INSERT INTO reseller_events (id, reseller_id, event, actor, created_at) VALUES (?, ?, 'application_submitted', ?, ?)")
+      .bind(crypto.randomUUID(), id, `applicant:${input.email}`, now),
+  ]);
+  return { duplicate: false, id };
+}
+
+export async function listResellerApplications(): Promise<ResellerApplication[]> {
+  await ensureOrdersSchema();
+  const result = await d1().prepare("SELECT * FROM reseller_applications ORDER BY created_at DESC LIMIT 500").all<Record<string, unknown>>();
+  return result.results.map(resellerFromRow);
+}
+
+export async function updateResellerApplication(input: { id: string; status: ResellerStatus; resellerPackage: ResellerPackage; customDiscount: number | null; internalNotes: string; actor: string }) {
+  await ensureOrdersSchema();
+  const db = d1();
+  const now = new Date().toISOString();
+  const existing = await db.prepare("SELECT id FROM reseller_applications WHERE id = ? LIMIT 1").bind(input.id).first();
+  if (!existing) return false;
+  await db.batch([
+    db.prepare(`UPDATE reseller_applications SET status = ?, reseller_package = ?, custom_discount = ?,
+      internal_notes = ?, reviewed_by = ?, reviewed_at = ?, updated_at = ? WHERE id = ?`)
+      .bind(input.status, input.resellerPackage, input.customDiscount, input.internalNotes || null, input.actor, now, now, input.id),
+    db.prepare("INSERT INTO reseller_events (id, reseller_id, event, actor, created_at) VALUES (?, ?, ?, ?, ?)")
+      .bind(crypto.randomUUID(), input.id, `status:${input.status};package:${input.resellerPackage};discount:${input.customDiscount ?? 'default'}`, input.actor, now),
+  ]);
+  return true;
 }
 
 export function configuredAdminEmails() {

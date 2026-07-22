@@ -59,7 +59,7 @@ export default async function StaffOrdersPage({ searchParams }: { searchParams: 
     <main className={styles.shell}>
       <header className={styles.header}>
         <div className={styles.brand}><span>QI</span><div><b>Quality Imports</b><small>Order operations</small></div></div>
-        <div className={styles.account}><span>{role}</span><div>{user.displayName}<small>{user.email}</small></div>{role !== "worker" && <a href="/staff/customers">Customers</a>}{role === "admin" && <a href="/staff/team">Team</a>}<a href={chatGPTSignOutPath("/")}>Sign out</a></div>
+        <div className={styles.account}><span>{role}</span><div>{user.displayName}<small>{user.email}</small></div>{role !== "worker" && <a href="/staff/customers">Customers</a>}{role !== "worker" && <a href="/staff/resellers">Resellers</a>}{role === "admin" && <a href="/staff/team">Team</a>}<a href={chatGPTSignOutPath("/")}>Sign out</a></div>
       </header>
 
       <section className={styles.intro}>

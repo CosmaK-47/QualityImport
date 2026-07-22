@@ -62,3 +62,35 @@ export const orderEvents = sqliteTable("order_events", {
   actor: text("actor").notNull(),
   createdAt: text("created_at").notNull(),
 });
+
+export const resellerApplications = sqliteTable("reseller_applications", {
+  id: text("id").primaryKey(),
+  contactName: text("contact_name").notNull(),
+  businessName: text("business_name").notNull(),
+  email: text("email").notNull(),
+  phone: text("phone").notNull(),
+  country: text("country").notNull(),
+  city: text("city").notNull(),
+  businessType: text("business_type").notNull(),
+  website: text("website"),
+  monthlyVolume: text("monthly_volume").notNull(),
+  categories: text("categories").notNull(),
+  registrationId: text("registration_id"),
+  message: text("message"),
+  status: text("status", { enum: ["pending", "more_information", "approved", "rejected", "suspended"] }).notNull().default("pending"),
+  resellerPackage: text("reseller_package", { enum: ["none", "starter", "growth", "strategic"] }).notNull().default("none"),
+  customDiscount: integer("custom_discount"),
+  internalNotes: text("internal_notes"),
+  reviewedBy: text("reviewed_by"),
+  reviewedAt: text("reviewed_at"),
+  createdAt: text("created_at").notNull(),
+  updatedAt: text("updated_at").notNull(),
+});
+
+export const resellerEvents = sqliteTable("reseller_events", {
+  id: text("id").primaryKey(),
+  resellerId: text("reseller_id").notNull().references(() => resellerApplications.id, { onDelete: "cascade" }),
+  event: text("event").notNull(),
+  actor: text("actor").notNull(),
+  createdAt: text("created_at").notNull(),
+});

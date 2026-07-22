@@ -20,7 +20,7 @@ export default async function StaffCustomersPage() {
     <main className={styles.shell}>
       <header className={styles.header}>
         <div className={styles.brand}><span>QI</span><div><b>Quality Imports</b><small>Customer directory</small></div></div>
-        <div className={styles.account}><span>{role}</span><a href="/staff/orders">Orders</a>{role === "admin" && <a href="/staff/team">Team</a>}<a href={chatGPTSignOutPath("/")}>Sign out</a></div>
+        <div className={styles.account}><span>{role}</span><a href="/staff/orders">Orders</a><a href="/staff/resellers">Resellers</a>{role === "admin" && <a href="/staff/team">Team</a>}<a href={chatGPTSignOutPath("/")}>Sign out</a></div>
       </header>
       <section className={styles.intro}>
         <div><p>STAFF / CUSTOMERS</p><h1>Order contacts, kept responsibly.</h1><span>Email and telephone details come from completed checkout forms. Marketing permission is shown separately and must never be assumed from placing an order.</span></div>

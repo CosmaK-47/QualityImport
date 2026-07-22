@@ -2,6 +2,8 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { getWebsiteProducts } from "@/lib/inventory";
+import AccountAccessModal from "./account-access-modal";
+import ResellerApplicationModal from "./reseller-application-modal";
 
 type Language = "RO" | "RU" | "EN";
 type Category = "all" | "outerwear" | "tops" | "bottoms" | "shoes";
@@ -317,6 +319,8 @@ export default function Home() {
   const [checkoutResult, setCheckoutResult] = useState("");
   const [completedOrder, setCompletedOrder] = useState("");
   const [menuOpen, setMenuOpen] = useState(false);
+  const [accountOpen, setAccountOpen] = useState(false);
+  const [resellerApplicationOpen, setResellerApplicationOpen] = useState(false);
   const [statusMessage, setStatusMessage] = useState("");
   const [selectedProductId, setSelectedProductId] = useState<string | null>(null);
   const [productMedia, setProductMedia] = useState<"photos" | "video" | "spin">("photos");
@@ -470,7 +474,7 @@ export default function Home() {
               </button>
             ))}
           </div>
-          <button className="text-action" type="button">{t.account}</button>
+          <button className="text-action" type="button" onClick={() => setAccountOpen(true)}>{t.account}</button>
           <button className="bag-action" type="button" aria-label={`${t.bag}: ${bagCount}`} onClick={() => setBagOpen(true)}>
             {t.bag} <span>{String(bagCount).padStart(2, "0")}</span>
           </button>
@@ -632,7 +636,7 @@ export default function Home() {
           <h2>{t.resellerTitle}</h2>
           <p>{t.resellerBody}</p>
           <div className="reseller-actions">
-            <a className="button button-dark" href="#contact">{t.apply}</a>
+            <button className="button button-dark" type="button" onClick={() => setResellerApplicationOpen(true)}>{t.apply}</button>
             <a className="text-link text-link-dark" href="#process">{t.learn}<span aria-hidden="true">↗</span></a>
           </div>
         </div>
@@ -674,6 +678,9 @@ export default function Home() {
         </div>
         <div className="footer-bottom"><span>{t.rights}</span><span>Chișinău · Moldova</span></div>
       </footer>
+
+      <AccountAccessModal open={accountOpen} onClose={() => setAccountOpen(false)} />
+      <ResellerApplicationModal open={resellerApplicationOpen} onClose={() => setResellerApplicationOpen(false)} />
 
       {selectedProduct && <div className="product-modal-backdrop" role="presentation" onMouseDown={() => setSelectedProductId(null)}>
         <section className="product-modal" role="dialog" aria-modal="true" aria-labelledby="product-modal-title" onMouseDown={(event) => event.stopPropagation()}>
