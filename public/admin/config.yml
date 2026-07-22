@@ -31,6 +31,25 @@ collections:
                 widget: image
                 required: false
                 hint: "Used by both the website and Telegram. Recommended: square or 4:5 JPG/WebP."
+              - label: Product gallery
+                name: gallery
+                widget: list
+                required: false
+                hint: "Additional product photos shown in the website detail view."
+                field: { label: Image, name: image, widget: image }
+              - label: Product video
+                name: video
+                widget: file
+                required: false
+                media_library:
+                  config:
+                    multiple: false
+              - label: 360° product frames
+                name: spin360
+                widget: list
+                required: false
+                hint: "Upload the rotation images in order around the product. 24–36 equal-size frames are recommended."
+                field: { label: Frame, name: frame, widget: image }
               - label: Category
                 name: category
                 widget: select
@@ -58,6 +77,9 @@ collections:
                   - { label: Show on website, name: enabled, widget: boolean, default: true }
                   - { label: Website name, name: name, widget: string }
                   - { label: Website description, name: description, widget: text }
+                  - { label: Full product details, name: details, widget: markdown, required: false }
+                  - { label: Materials and care, name: materials, widget: text, required: false }
+                  - { label: Available sizes, name: sizes, widget: string, required: false, hint: "Example: XS, S, M, L" }
               - label: Telegram
                 name: telegram
                 widget: object

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { getWebsiteProducts } from "@/lib/inventory";
 
 type Language = "RO" | "RU" | "EN";
@@ -93,6 +93,16 @@ const copy = {
     reservationTitle: "Rezervarea a fost primită",
     reservationBody: "Echipa QI va confirma disponibilitatea și îți va trimite instrucțiunile de plată. Produsul nu va fi expediat înainte de confirmarea plății.",
     marketingConsent: "Sunt de acord să primesc prin email noutăți și oferte QI. Opțional; datele comenzii sunt păstrate separat pentru procesarea acesteia.",
+    viewDetails: "Vezi detalii",
+    productDetails: "Detalii produs",
+    photos: "Fotografii",
+    video: "Video",
+    spin360: "Vizualizare 360°",
+    spinHelp: "Trage stânga sau dreapta pentru a roti produsul.",
+    materials: "Materiale și îngrijire",
+    sizes: "Mărimi disponibile",
+    close: "Închide",
+    quantityAvailable: "bucăți disponibile",
   },
   RU: {
     announcement: "Доставка по всей Молдове · Товары в наличии и избранный предзаказ",
@@ -177,6 +187,16 @@ const copy = {
     reservationTitle: "Заявка на резервирование получена",
     reservationBody: "Команда QI подтвердит наличие и отправит инструкции для оплаты. Товар не будет отправлен до подтверждения оплаты.",
     marketingConsent: "Я согласен получать новости и предложения QI по электронной почте. Необязательно; данные заказа хранятся отдельно для его обработки.",
+    viewDetails: "Подробнее",
+    productDetails: "Описание товара",
+    photos: "Фотографии",
+    video: "Видео",
+    spin360: "Обзор 360°",
+    spinHelp: "Проведите влево или вправо, чтобы повернуть товар.",
+    materials: "Материалы и уход",
+    sizes: "Доступные размеры",
+    close: "Закрыть",
+    quantityAvailable: "штук в наличии",
   },
   EN: {
     announcement: "Delivery across Moldova · In-stock and selected preorder",
@@ -261,6 +281,16 @@ const copy = {
     reservationTitle: "Reservation received",
     reservationBody: "The QI team will confirm availability and send payment instructions. The product will not be shipped before payment is confirmed.",
     marketingConsent: "I agree to receive QI news and offers by email. Optional; order details are stored separately to process the order.",
+    viewDetails: "View details",
+    productDetails: "Product details",
+    photos: "Photos",
+    video: "Video",
+    spin360: "360° view",
+    spinHelp: "Drag left or right to rotate the product.",
+    materials: "Materials and care",
+    sizes: "Available sizes",
+    close: "Close",
+    quantityAvailable: "pieces available",
   },
 } as const;
 
@@ -279,7 +309,13 @@ export default function Home() {
   const [completedOrder, setCompletedOrder] = useState("");
   const [menuOpen, setMenuOpen] = useState(false);
   const [statusMessage, setStatusMessage] = useState("");
+  const [selectedProductId, setSelectedProductId] = useState<string | null>(null);
+  const [productMedia, setProductMedia] = useState<"photos" | "video" | "spin">("photos");
+  const [photoIndex, setPhotoIndex] = useState(0);
+  const [spinFrame, setSpinFrame] = useState(0);
+  const spinDrag = useRef<{ x: number; frame: number } | null>(null);
   const t = copy[language];
+  const selectedProduct = selectedProductId ? products.find((product) => product.id === selectedProductId) ?? null : null;
   const bagCount = useMemo(
     () => Object.values(bagItems).reduce((sum, quantity) => sum + quantity, 0),
     [bagItems],
@@ -318,6 +354,14 @@ export default function Home() {
     }
   }, [bagItems, bagStorageReady]);
 
+  useEffect(() => {
+    if (!selectedProduct) return;
+    const onKeyDown = (event: KeyboardEvent) => { if (event.key === "Escape") setSelectedProductId(null); };
+    document.body.style.overflow = "hidden";
+    window.addEventListener("keydown", onKeyDown);
+    return () => { document.body.style.overflow = ""; window.removeEventListener("keydown", onKeyDown); };
+  }, [selectedProduct]);
+
   const visibleProducts = useMemo(
     () =>
       products.filter(
@@ -332,6 +376,13 @@ export default function Home() {
     setBagItems((items) => ({ ...items, [productId]: (items[productId] ?? 0) + 1 }));
     setStatusMessage(t.added);
     window.setTimeout(() => setStatusMessage(""), 1800);
+  }
+
+  function openProduct(productId: string) {
+    setSelectedProductId(productId);
+    setProductMedia("photos");
+    setPhotoIndex(0);
+    setSpinFrame(0);
   }
 
   function changeQuantity(productId: string, change: number) {
@@ -508,15 +559,15 @@ export default function Home() {
           <div className="product-grid">
             {visibleProducts.map((product, index) => (
               <article className="product-card" key={product.id}>
-                <div className={`product-art art-${product.art} tone-${product.tone}`}>
+                <button type="button" className={`product-art art-${product.art} tone-${product.tone} ${product.image ? "has-product-image" : ""}`} style={product.image ? { backgroundImage: `url(${product.image})` } : undefined} onClick={() => openProduct(product.id)} aria-label={`${t.viewDetails}: ${product.name}`}>
                   <span className="product-index">{String(index + 1).padStart(2, "0")}</span>
                   <span className="product-badge">{t.inspected}</span>
                   <span className="product-shape" aria-hidden="true" />
                   <span className="product-line" aria-hidden="true" />
-                </div>
+                </button>
                 <div className="product-info">
                   <div>
-                    <h3>{product.name}</h3>
+                    <h3><button type="button" className="product-title-button" onClick={() => openProduct(product.id)}>{product.name}</button></h3>
                     <p className={`availability availability-${product.availability}`}>
                       {product.availability === "stock" ? t.stock : t.preorder}
                     </p>
@@ -614,6 +665,37 @@ export default function Home() {
         </div>
         <div className="footer-bottom"><span>{t.rights}</span><span>Chișinău · Moldova</span></div>
       </footer>
+
+      {selectedProduct && <div className="product-modal-backdrop" role="presentation" onMouseDown={() => setSelectedProductId(null)}>
+        <section className="product-modal" role="dialog" aria-modal="true" aria-labelledby="product-modal-title" onMouseDown={(event) => event.stopPropagation()}>
+          <button className="product-modal-close" type="button" onClick={() => setSelectedProductId(null)} aria-label={t.close}>×</button>
+          <div className="product-modal-visual">
+            <div className="product-media-tabs" role="tablist" aria-label={t.productDetails}>
+              <button className={productMedia === "photos" ? "active" : ""} type="button" onClick={() => setProductMedia("photos")}>{t.photos}</button>
+              {selectedProduct.video && <button className={productMedia === "video" ? "active" : ""} type="button" onClick={() => setProductMedia("video")}>{t.video}</button>}
+              {selectedProduct.spin360.length > 1 && <button className={productMedia === "spin" ? "active" : ""} type="button" onClick={() => setProductMedia("spin")}>{t.spin360}</button>}
+            </div>
+            {productMedia === "video" && selectedProduct.video ? <video className="product-video" src={selectedProduct.video} controls playsInline preload="metadata" /> : productMedia === "spin" && selectedProduct.spin360.length > 1 ? <>
+              <div className="product-spin" role="img" aria-label={`${selectedProduct.name} ${t.spin360}`} style={{ backgroundImage: `url(${selectedProduct.spin360[spinFrame]})` }} onPointerDown={(event) => { spinDrag.current = { x: event.clientX, frame: spinFrame }; event.currentTarget.setPointerCapture(event.pointerId); }} onPointerMove={(event) => { if (!spinDrag.current) return; const movement = Math.round((event.clientX - spinDrag.current.x) / 14); const count = selectedProduct.spin360.length; setSpinFrame((spinDrag.current.frame - movement % count + count) % count); }} onPointerUp={(event) => { spinDrag.current = null; event.currentTarget.releasePointerCapture(event.pointerId); }} />
+              <p className="spin-help">↔ {t.spinHelp}</p>
+              <input className="spin-range" type="range" min="0" max={selectedProduct.spin360.length - 1} value={spinFrame} onChange={(event) => setSpinFrame(Number(event.target.value))} aria-label={t.spin360} />
+            </> : selectedProduct.gallery.length ? <>
+              <div className="product-photo" role="img" aria-label={`${selectedProduct.name} ${photoIndex + 1}`} style={{ backgroundImage: `url(${selectedProduct.gallery[photoIndex]})` }} />
+              {selectedProduct.gallery.length > 1 && <div className="product-thumbnails">{selectedProduct.gallery.map((image, index) => <button type="button" key={`${image}-${index}`} className={photoIndex === index ? "active" : ""} style={{ backgroundImage: `url(${image})` }} onClick={() => setPhotoIndex(index)} aria-label={`${t.photos} ${index + 1}`} />)}</div>}
+            </> : <div className={`product-modal-art art-${selectedProduct.art} tone-${selectedProduct.tone}`}><span className="product-shape"/><span className="product-line"/></div>}
+          </div>
+          <div className="product-modal-copy">
+            <p className="eyebrow">QI / {selectedProduct.sku}</p>
+            <h2 id="product-modal-title">{selectedProduct.name}</h2>
+            <p className={`availability availability-${selectedProduct.availability}`}>{selectedProduct.availability === "stock" ? t.stock : t.preorder}</p>
+            <p className="product-modal-description">{selectedProduct.details}</p>
+            {selectedProduct.materials && <div className="product-detail-block"><h3>{t.materials}</h3><p>{selectedProduct.materials}</p></div>}
+            {selectedProduct.sizes && <div className="product-detail-block"><h3>{t.sizes}</h3><p>{selectedProduct.sizes}</p></div>}
+            {selectedProduct.availability === "stock" && <p className="product-stock-count">{selectedProduct.stockQuantity} {t.quantityAvailable}</p>}
+            <div className="product-modal-buy"><strong>{selectedProduct.price}</strong><button type="button" onClick={() => { addToBag(selectedProduct.id); setSelectedProductId(null); setBagOpen(true); }}>{t.add}</button></div>
+          </div>
+        </section>
+      </div>}
 
       <div className={`toast ${statusMessage ? "visible" : ""}`} role="status" aria-live="polite">
         {statusMessage}

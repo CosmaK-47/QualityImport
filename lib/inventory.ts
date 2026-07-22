@@ -9,6 +9,9 @@ export type InventoryProduct = {
   id: string;
   sku: string;
   image?: string;
+  gallery?: string[];
+  video?: string;
+  spin360?: string[];
   category: Category;
   price: number;
   currency: "MDL";
@@ -20,6 +23,9 @@ export type InventoryProduct = {
     enabled: boolean;
     name: string;
     description: string;
+    details?: string;
+    materials?: string;
+    sizes?: string;
   };
   telegram: {
     enabled: boolean;
@@ -45,8 +51,14 @@ export function getWebsiteProducts() {
       id: product.id,
       sku: product.sku,
       image: product.image || null,
+      gallery: [product.image, ...(product.gallery ?? [])].filter((value, index, values): value is string => Boolean(value) && values.indexOf(value) === index),
+      video: product.video || null,
+      spin360: (product.spin360 ?? []).filter(Boolean),
       name: product.website.name,
       description: product.website.description,
+      details: product.website.details || product.website.description,
+      materials: product.website.materials || null,
+      sizes: product.website.sizes || null,
       category: product.category,
       price: formatPrice(product.price, product.currency),
       availability: product.availability,
