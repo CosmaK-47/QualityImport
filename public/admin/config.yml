@@ -19,6 +19,27 @@ collections:
         fields:
           - { label: Schema version, name: version, widget: number, value_type: int, min: 1 }
           - { label: Updated at, name: updatedAt, widget: datetime }
+          - label: Homepage scroll animation
+            name: heroAnimation
+            widget: object
+            collapsed: true
+            hint: "Optional cinematic animation in the right side of the homepage hero. Keep disabled until the final assets are uploaded. A frame sequence gives the smoothest forward/reverse scroll control."
+            fields:
+              - { label: Enable animation, name: enabled, widget: boolean, default: false }
+              - { label: Poster / mobile fallback, name: poster, widget: image, required: false, hint: "Shown before loading, on mobile, and when reduced motion is enabled. Recommended 1600 × 1600 WebP or AVIF." }
+              - label: Scrub video fallback
+                name: video
+                widget: file
+                required: false
+                hint: "Optional MP4/WebM fallback. Use a silent 4–8 second clip. A frame sequence below takes priority."
+              - label: Animation frames
+                name: frames
+                widget: list
+                required: false
+                hint: "Upload final animation frames in exact playback order. Recommended: 72–120 equal-size WebP/AVIF frames. These are output frames, not the reference photos used to create the animation."
+                field: { label: Frame, name: frame, widget: image }
+              - { label: Scroll length (% of viewport), name: scrollLength, widget: number, value_type: int, min: 120, max: 400, default: 240, hint: "240 means the animation occupies about 2.4 screens of scrolling." }
+              - { label: Accessible description, name: alt, widget: string, default: "Quality Imports inspected product presentation" }
           - label: Products
             name: products
             widget: list

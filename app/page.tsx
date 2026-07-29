@@ -1,15 +1,17 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { getWebsiteProducts } from "@/lib/inventory";
+import { getHeroAnimation, getWebsiteProducts } from "@/lib/inventory";
 import AccountAccessModal from "./account-access-modal";
 import ResellerApplicationModal from "./reseller-application-modal";
+import ScrollHeroStage from "./scroll-hero-stage";
 
 type Language = "RO" | "RU" | "EN";
 type Category = "all" | "outerwear" | "tops" | "bottoms" | "shoes";
 type Availability = "all" | "stock" | "preorder";
 
 const products = getWebsiteProducts();
+const heroAnimation = getHeroAnimation();
 
 const copy = {
   RO: {
@@ -491,7 +493,7 @@ export default function Home() {
         </div>
       </header>
 
-      <section className="hero" id="top">
+      <section className={`hero ${heroAnimation.enabled ? "hero-scroll" : ""}`} id="top" style={heroAnimation.enabled ? { "--hero-scroll-length": `${heroAnimation.scrollLength}vh` } as React.CSSProperties : undefined}>
         <div className="hero-copy">
           <p className="eyebrow">{t.eyebrow}</p>
           <h1>{t.heroTitle}</h1>
@@ -502,21 +504,7 @@ export default function Home() {
           </div>
         </div>
 
-        <div className="hero-stage" aria-label="QI curated fashion presentation">
-          <div className="stage-grid" />
-          <span className="stage-label stage-label-top">QI INSPECTED</span>
-          <span className="stage-label stage-label-right">IN STOCK</span>
-          <span className="stage-label stage-label-bottom">SELECTED PREORDER</span>
-          <div className="garment garment-jacket" aria-hidden="true">
-            <span className="garment-body" />
-            <span className="garment-sleeve garment-sleeve-left" />
-            <span className="garment-sleeve garment-sleeve-right" />
-            <span className="garment-zip" />
-            <span className="garment-tag">QI</span>
-          </div>
-          <span className="stage-number">01</span>
-          <span className="stage-orbit" />
-        </div>
+        <ScrollHeroStage animation={heroAnimation} />
       </section>
 
       <section className="trust-strip" aria-label="QI benefits">

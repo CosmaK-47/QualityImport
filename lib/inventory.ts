@@ -5,6 +5,15 @@ export type Availability = "stock" | "preorder";
 export type ProductArt = "jacket" | "trousers" | "shoe" | "knit" | "set" | "vest";
 export type ProductTone = "graphite" | "silver" | "chalk";
 
+export type HeroAnimation = {
+  enabled: boolean;
+  poster?: string;
+  video?: string;
+  frames?: string[];
+  scrollLength?: number;
+  alt?: string;
+};
+
 export type InventoryProduct = {
   id: string;
   sku: string;
@@ -37,8 +46,21 @@ export type InventoryProduct = {
 const inventory = inventoryData as {
   version: number;
   updatedAt: string;
+  heroAnimation?: HeroAnimation;
   products: InventoryProduct[];
 };
+
+export function getHeroAnimation() {
+  const animation = inventory.heroAnimation;
+  return {
+    enabled: Boolean(animation?.enabled && ((animation.frames?.length ?? 0) > 1 || animation.video)),
+    poster: animation?.poster || null,
+    video: animation?.video || null,
+    frames: (animation?.frames ?? []).filter(Boolean),
+    scrollLength: Math.min(400, Math.max(120, animation?.scrollLength ?? 240)),
+    alt: animation?.alt || "Quality Imports inspected product presentation",
+  };
+}
 
 export function formatPrice(price: number, currency: string) {
   return `${new Intl.NumberFormat("ro-MD").format(price)} ${currency}`;

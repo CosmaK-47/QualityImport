@@ -318,6 +318,16 @@ a:focus-visible {
   background: var(--graphite);
 }
 
+.hero-scroll { min-height: calc(100vh + var(--hero-scroll-length, 240vh)); align-items: start; }
+.hero-scroll .hero-copy,.hero-scroll .hero-stage { position: sticky; top: 0; min-height: 100vh; height: 100vh; }
+.hero-stage-cinematic { background-position: center; background-size: cover; }
+.hero-sequence { position: absolute; z-index: 1; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0; transition: opacity 300ms ease; }
+.hero-stage-cinematic.is-ready .hero-sequence { opacity: 1; }
+.hero-stage-cinematic .stage-grid { z-index: 2; opacity: .28; }
+.hero-stage-cinematic .stage-label,.hero-stage-cinematic .stage-number,.hero-stage-cinematic .stage-orbit { z-index: 3; }
+.scroll-cue { position: absolute; z-index: 4; bottom: 34px; left: 34px; display: flex; align-items: center; gap: 12px; color: var(--silver-light); font-size: 9px; font-weight: 700; letter-spacing: .18em; }
+.scroll-cue i { font-style: normal; font-size: 16px; }
+
 .stage-grid {
   position: absolute;
   inset: 0;
@@ -743,6 +753,10 @@ a:focus-visible {
   .language-switcher button { min-width: 29px; }
   .primary-nav { top: 70px; }
   .hero { grid-template-columns: 1fr; }
+  .hero-scroll { min-height: auto; }
+  .hero-scroll .hero-copy,.hero-scroll .hero-stage { position: relative; top: auto; height: auto; min-height: 560px; }
+  .hero-scroll .hero-copy { min-height: 600px; }
+  .hero-stage-cinematic .hero-sequence,.scroll-cue { display: none; }
   .hero-copy { min-height: 600px; padding: 70px 22px; border-right: 0; border-bottom: 1px solid var(--line-dark); }
   .hero h1 { font-size: clamp(58px, 17vw, 82px); }
   .hero-stage { min-height: 560px; }
