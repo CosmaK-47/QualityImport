@@ -55,3 +55,21 @@ test("publishes channel-specific inventory with explicit verification states", a
   assert.match(decapConfig, /value: verified/);
   assert.match(decapConfig, /value: unverified/);
 });
+
+test("routes Decap GitHub login through the QI OAuth bridge", async () => {
+  const [decapConfig, authRoute, callbackRoute, oauthModule] = await Promise.all([
+    readFile(new URL("../public/admin/config.yml", import.meta.url), "utf8"),
+    readFile(new URL("../app/api/decap/auth/route.ts", import.meta.url), "utf8"),
+    readFile(new URL("../app/api/decap/callback/route.ts", import.meta.url), "utf8"),
+    readFile(new URL("../lib/decap-oauth.ts", import.meta.url), "utf8"),
+  ]);
+
+  assert.match(decapConfig, /base_url: https:\/\/qi-quality-imports\.cosmak-47\.chatgpt\.site/);
+  assert.match(decapConfig, /auth_endpoint: api\/decap\/auth/);
+  assert.match(authRoute, /beginGitHubAuthorization/);
+  assert.match(callbackRoute, /completeGitHubAuthorization/);
+  assert.match(oauthModule, /scope", "public_repo"/);
+  assert.match(oauthModule, /qi_decap_oauth_state/);
+  assert.match(oauthModule, /DECAP_GITHUB_ALLOWED_USERS/);
+  assert.doesNotMatch(oauthModule, /console\.log/);
+});

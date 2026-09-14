@@ -2,6 +2,9 @@ backend:
   name: github
   repo: CosmaK-47/QualityImport
   branch: main
+  base_url: https://qi-quality-imports.cosmak-47.chatgpt.site
+  auth_endpoint: api/decap/auth
+  site_domain: qi-quality-imports.cosmak-47.chatgpt.site
 
 local_backend: true
 publish_mode: editorial_workflow
