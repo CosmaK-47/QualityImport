@@ -6,6 +6,7 @@ price and channel presentation.
 ## Editing rules
 
 - Change `stockQuantity`, `availability` or `price` to update every enabled channel.
+- Set `verificationStatus` to `verified` only after the QI verification process is complete; otherwise keep `unverified`.
 - Change fields inside `website` to update only the storefront.
 - Change fields inside `telegram` to update only the bot.
 - Upload or replace `image` in Decap to update the product image used by both channels.

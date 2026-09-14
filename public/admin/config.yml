@@ -81,6 +81,14 @@ collections:
                 name: availability
                 widget: select
                 options: [stock, preorder]
+              - label: QI verification status
+                name: verificationStatus
+                widget: select
+                options:
+                  - { label: QI verified, value: verified }
+                  - { label: Not QI verified, value: unverified }
+                default: unverified
+                hint: "Use QI verified only after the product has completed the QI verification process. Products without completed verification must remain Not QI verified."
               - { label: Stock quantity, name: stockQuantity, widget: number, value_type: int, min: 0 }
               - label: Artwork type
                 name: art

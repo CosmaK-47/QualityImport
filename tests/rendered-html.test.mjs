@@ -36,11 +36,12 @@ test("removes the disposable starter experience", async () => {
 });
 
 test("publishes channel-specific inventory with explicit verification states", async () => {
-  const [inventoryText, inventoryModule, websiteRoute, telegramRoute] = await Promise.all([
+  const [inventoryText, inventoryModule, websiteRoute, telegramRoute, decapConfig] = await Promise.all([
     readFile(new URL("../content/inventory.json", import.meta.url), "utf8"),
     readFile(new URL("../lib/inventory.ts", import.meta.url), "utf8"),
     readFile(new URL("../app/api/inventory/website/route.ts", import.meta.url), "utf8"),
     readFile(new URL("../app/api/inventory/telegram/route.ts", import.meta.url), "utf8"),
+    readFile(new URL("../public/admin/config.yml", import.meta.url), "utf8"),
   ]);
   const inventory = JSON.parse(inventoryText);
 
@@ -50,4 +51,7 @@ test("publishes channel-specific inventory with explicit verification states", a
   assert.match(inventoryModule, /verificationStatus: product\.verificationStatus/);
   assert.match(websiteRoute, /channel: "website"/);
   assert.match(telegramRoute, /channel: "telegram"/);
+  assert.match(decapConfig, /name: verificationStatus/);
+  assert.match(decapConfig, /value: verified/);
+  assert.match(decapConfig, /value: unverified/);
 });
