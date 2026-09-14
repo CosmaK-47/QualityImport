@@ -9,6 +9,7 @@ import ScrollHeroStage from "./scroll-hero-stage";
 type Language = "RO" | "RU" | "EN";
 type Category = "all" | "outerwear" | "tops" | "bottoms" | "shoes";
 type Availability = "all" | "stock" | "preorder";
+type VerificationFilter = "all" | "verified" | "unverified";
 
 const products = getWebsiteProducts();
 const heroAnimation = getHeroAnimation();
@@ -22,16 +23,16 @@ const copy = {
     account: "Cont",
     bag: "Coș",
     eyebrow: "SELECTAT PENTRU MOLDOVA",
-    heroTitle: "Modă autentică, selectată cu grijă.",
-    heroBody: "Produse verificate pentru clienți și reselleri din întreaga Moldovă.",
+    heroTitle: "Modă selectată cu grijă.",
+    heroBody: "Produse pentru clienți și reselleri din întreaga Moldovă, cu statutul verificării afișat clar.",
     heroPrimary: "Explorează colecția",
     heroSecondary: "Pentru reselleri",
-    trustQuality: "Calitate verificată de QI",
+    trustQuality: "Statut de verificare transparent",
     trustPrice: "Preț final transparent",
     trustDelivery: "Livrare în toată Moldova",
     collectionEyebrow: "PRIMA SELECȚIE",
     collectionTitle: "Piese alese, nu un catalog fără sfârșit.",
-    collectionBody: "Fiecare produs este verificat înainte de publicare pentru calitate, cost complet și disponibilitate realistă.",
+    collectionBody: "Fiecare produs arată clar dacă a fost verificat de QI. Lipsa etichetei înseamnă că verificarea QI nu a fost finalizată.",
     all: "Toate",
     outerwear: "Jachete",
     tops: "Topuri",
@@ -39,6 +40,11 @@ const copy = {
     shoes: "Încălțăminte",
     stockFilter: "În stoc",
     preorderFilter: "Precomandă",
+    verificationFilter: "Verificare",
+    verificationAll: "Toate produsele",
+    verificationVerified: "Verificate QI",
+    verificationUnverified: "Fără verificare QI",
+    verificationHint: "Apasă pentru a schimba: toate, verificate QI sau fără verificare QI",
     stock: "În stoc · 1–3 zile",
     preorder: "Precomandă selectată",
     inspected: "VERIFICAT QI",
@@ -48,7 +54,7 @@ const copy = {
     processEyebrow: "DE LA SURSĂ LA TINE",
     processTitle: "Un proces clar, fără promisiuni imposibile.",
     step1Title: "Selectăm",
-    step1Body: "QI publică doar produse care trec verificarea internă de calitate, cost și origine.",
+    step1Body: "QI selectează produsele și marchează clar dacă au finalizat sau nu verificarea noastră.",
     step2Title: "Confirmăm",
     step2Body: "Pentru precomenzi confirmăm prețul și disponibilitatea înainte de plată.",
     step3Title: "Livrăm",
@@ -66,7 +72,7 @@ const copy = {
     learn: "Vezi cum funcționează",
     qualityEyebrow: "STANDARDUL QI",
     qualityTitle: "Încrederea începe înainte de checkout.",
-    qualityBody: "Statutul de autenticitate, compoziția, mărimile și condițiile de livrare rămân informații factuale. Nu le schimbăm pentru marketing.",
+    qualityBody: "Eticheta Verificat QI apare numai după finalizarea verificării. Produsele fără etichetă rămân vizibile, dar statutul lor nu este prezentat ca verificat.",
     qualityLink: "Descoperă standardul nostru",
     support: "Suport în RO · RU · EN",
     footerLine: "Modă selectată și importată responsabil pentru Moldova.",
@@ -109,6 +115,7 @@ const copy = {
     close: "Închide",
     quantityAvailable: "bucăți disponibile",
     videoPending: "Videoclipul certificat QI va fi disponibil în curând.",
+    standardVideoPending: "Videoclipul produsului va fi disponibil în curând.",
     spinPending: "Vizualizarea 360° va fi disponibilă după încărcarea cadrelor produsului.",
   },
   RU: {
@@ -119,16 +126,16 @@ const copy = {
     account: "Аккаунт",
     bag: "Корзина",
     eyebrow: "ОТОБРАНО ДЛЯ МОЛДОВЫ",
-    heroTitle: "Аутентичная мода, отобранная с вниманием.",
-    heroBody: "Проверенные товары для покупателей и реселлеров по всей Молдове.",
+    heroTitle: "Мода, отобранная с вниманием.",
+    heroBody: "Товары для покупателей и реселлеров по всей Молдове с четко указанным статусом проверки.",
     heroPrimary: "Смотреть коллекцию",
     heroSecondary: "Для реселлеров",
-    trustQuality: "Качество проверено QI",
+    trustQuality: "Прозрачный статус проверки",
     trustPrice: "Прозрачная итоговая цена",
     trustDelivery: "Доставка по всей Молдове",
     collectionEyebrow: "ПЕРВЫЙ ОТБОР",
     collectionTitle: "Отборные вещи, а не бесконечный каталог.",
-    collectionBody: "До публикации мы проверяем качество, полную стоимость и реальную доступность каждого товара.",
+    collectionBody: "У каждого товара четко указано, прошел ли он проверку QI. Отсутствие метки означает, что проверка QI не завершена.",
     all: "Все",
     outerwear: "Куртки",
     tops: "Верх",
@@ -136,6 +143,11 @@ const copy = {
     shoes: "Обувь",
     stockFilter: "В наличии",
     preorderFilter: "Предзаказ",
+    verificationFilter: "Проверка",
+    verificationAll: "Все товары",
+    verificationVerified: "Проверено QI",
+    verificationUnverified: "Без проверки QI",
+    verificationHint: "Нажмите, чтобы переключить: все, проверено QI или без проверки QI",
     stock: "В наличии · 1–3 дня",
     preorder: "Избранный предзаказ",
     inspected: "ПРОВЕРЕНО QI",
@@ -145,7 +157,7 @@ const copy = {
     processEyebrow: "ОТ ИСТОЧНИКА ДО ВАС",
     processTitle: "Понятный процесс без невозможных обещаний.",
     step1Title: "Отбираем",
-    step1Body: "QI публикует только товары, прошедшие внутреннюю проверку качества, стоимости и происхождения.",
+    step1Body: "QI отбирает товары и четко указывает, завершена ли наша проверка.",
     step2Title: "Подтверждаем",
     step2Body: "Для предзаказа мы подтверждаем цену и наличие до оплаты.",
     step3Title: "Доставляем",
@@ -163,7 +175,7 @@ const copy = {
     learn: "Как это работает",
     qualityEyebrow: "СТАНДАРТ QI",
     qualityTitle: "Доверие начинается до оформления заказа.",
-    qualityBody: "Подлинность, состав, размеры и условия доставки остаются фактическими данными. Мы не меняем их ради маркетинга.",
+    qualityBody: "Метка Проверено QI появляется только после завершения проверки. Товары без метки остаются видимыми, но не представляются как проверенные.",
     qualityLink: "Изучить наш стандарт",
     support: "Поддержка на RO · RU · EN",
     footerLine: "Ответственно отобранная и импортированная мода для Молдовы.",
@@ -206,6 +218,7 @@ const copy = {
     close: "Закрыть",
     quantityAvailable: "штук в наличии",
     videoPending: "Сертифицированное видео QI скоро будет доступно.",
+    standardVideoPending: "Видео товара скоро будет доступно.",
     spinPending: "Обзор 360° появится после загрузки кадров товара.",
   },
   EN: {
@@ -216,16 +229,16 @@ const copy = {
     account: "Account",
     bag: "Bag",
     eyebrow: "CURATED FOR MOLDOVA",
-    heroTitle: "Authentic fashion, carefully selected.",
-    heroBody: "Quality-verified products for customers and resellers across Moldova.",
+    heroTitle: "Fashion, carefully selected.",
+    heroBody: "Products for customers and resellers across Moldova, with verification status shown clearly.",
     heroPrimary: "Explore the collection",
     heroSecondary: "For resellers",
-    trustQuality: "QI quality inspected",
+    trustQuality: "Clear verification status",
     trustPrice: "Clear landed prices",
     trustDelivery: "Delivery across Moldova",
     collectionEyebrow: "THE FIRST SELECTION",
     collectionTitle: "Considered pieces, not an endless catalogue.",
-    collectionBody: "Every product is reviewed before publication for quality, complete cost and realistic availability.",
+    collectionBody: "Every product clearly shows whether it has been verified by QI. No badge means QI verification has not been completed.",
     all: "All",
     outerwear: "Outerwear",
     tops: "Tops",
@@ -233,6 +246,11 @@ const copy = {
     shoes: "Shoes",
     stockFilter: "In stock",
     preorderFilter: "Preorder",
+    verificationFilter: "Verification",
+    verificationAll: "All products",
+    verificationVerified: "QI verified",
+    verificationUnverified: "Not QI verified",
+    verificationHint: "Press to cycle between all, QI verified and not QI verified",
     stock: "In stock · 1–3 days",
     preorder: "Selected preorder",
     inspected: "QI INSPECTED",
@@ -242,7 +260,7 @@ const copy = {
     processEyebrow: "FROM SOURCE TO YOU",
     processTitle: "A clear process without impossible promises.",
     step1Title: "We select",
-    step1Body: "QI publishes only products that pass our internal quality, cost and origin review.",
+    step1Body: "QI selects products and clearly marks whether our verification has been completed.",
     step2Title: "We confirm",
     step2Body: "For preorders, we confirm price and availability before payment.",
     step3Title: "We deliver",
@@ -260,7 +278,7 @@ const copy = {
     learn: "See how it works",
     qualityEyebrow: "THE QI STANDARD",
     qualityTitle: "Trust begins before checkout.",
-    qualityBody: "Authenticity status, composition, sizing and delivery terms remain factual product information. We never rewrite them for marketing.",
+    qualityBody: "The QI Verified badge appears only after verification is complete. Products without it remain visible, but are never presented as verified.",
     qualityLink: "Discover our standard",
     support: "Support in RO · RU · EN",
     footerLine: "Fashion selected and responsibly imported for Moldova.",
@@ -303,6 +321,7 @@ const copy = {
     close: "Close",
     quantityAvailable: "pieces available",
     videoPending: "The QI Certified Video will be available soon.",
+    standardVideoPending: "The product video will be available soon.",
     spinPending: "The 360° view will appear after the product frames are uploaded.",
   },
 } as const;
@@ -314,6 +333,7 @@ export default function Home() {
   const [language, setLanguage] = useState<Language>("RO");
   const [category, setCategory] = useState<Category>("all");
   const [availability, setAvailability] = useState<Availability>("all");
+  const [verification, setVerification] = useState<VerificationFilter>("all");
   const [bagItems, setBagItems] = useState<Record<string, number>>({});
   const [bagStorageReady, setBagStorageReady] = useState(false);
   const [bagOpen, setBagOpen] = useState(false);
@@ -382,10 +402,21 @@ export default function Home() {
       products.filter(
         (product) =>
           (category === "all" || product.category === category) &&
-          (availability === "all" || product.availability === availability),
+          (availability === "all" || product.availability === availability) &&
+          (verification === "all" || product.verificationStatus === verification),
       ),
-    [category, availability],
+    [category, availability, verification],
   );
+
+  const verificationLabel = verification === "verified"
+    ? t.verificationVerified
+    : verification === "unverified"
+      ? t.verificationUnverified
+      : t.verificationAll;
+
+  function cycleVerification() {
+    setVerification((current) => current === "all" ? "verified" : current === "verified" ? "unverified" : "all");
+  }
 
   function addToBag(productId: string) {
     setBagItems((items) => ({ ...items, [productId]: (items[productId] ?? 0) + 1 }));
@@ -536,22 +567,41 @@ export default function Home() {
               </button>
             ))}
           </div>
-          <div className="filter-group filter-group-availability" aria-label="Availability">
+          <div className="catalogue-meta-filters">
+            <div className="filter-group filter-group-availability" aria-label="Availability">
+              <button
+                type="button"
+                className={availability === "stock" ? "active" : ""}
+                onClick={() => setAvailability(availability === "stock" ? "all" : "stock")}
+                aria-pressed={availability === "stock"}
+              >
+                {t.stockFilter}
+              </button>
+              <button
+                type="button"
+                className={availability === "preorder" ? "active" : ""}
+                onClick={() => setAvailability(availability === "preorder" ? "all" : "preorder")}
+                aria-pressed={availability === "preorder"}
+              >
+                {t.preorderFilter}
+              </button>
+            </div>
             <button
+              className={`verification-cycle state-${verification}`}
               type="button"
-              className={availability === "stock" ? "active" : ""}
-              onClick={() => setAvailability(availability === "stock" ? "all" : "stock")}
-              aria-pressed={availability === "stock"}
+              onClick={cycleVerification}
+              aria-label={`${t.verificationFilter}: ${verificationLabel}. ${t.verificationHint}`}
+              title={t.verificationHint}
             >
-              {t.stockFilter}
-            </button>
-            <button
-              type="button"
-              className={availability === "preorder" ? "active" : ""}
-              onClick={() => setAvailability(availability === "preorder" ? "all" : "preorder")}
-              aria-pressed={availability === "preorder"}
-            >
-              {t.preorderFilter}
+              <span className="verification-copy">
+                <small>{t.verificationFilter}</small>
+                <strong>{verificationLabel}</strong>
+              </span>
+              <span className="verification-track" aria-hidden="true">
+                <i className={verification === "all" ? "active" : ""} />
+                <i className={verification === "verified" ? "active" : ""} />
+                <i className={verification === "unverified" ? "active" : ""} />
+              </span>
             </button>
           </div>
         </div>
@@ -562,7 +612,7 @@ export default function Home() {
               <article className="product-card" key={product.id}>
                 <button type="button" className={`product-art art-${product.art} tone-${product.tone} ${product.image ? "has-product-image" : ""}`} style={product.image ? { backgroundImage: `url(${product.image})` } : undefined} onClick={() => openProduct(product.id)} aria-label={`${t.viewDetails}: ${product.name}`}>
                   <span className="product-index">{String(index + 1).padStart(2, "0")}</span>
-                  <span className="product-badge">{t.inspected}</span>
+                  {product.verificationStatus === "verified" && <span className="product-badge">{t.inspected}</span>}
                   <span className="product-shape" aria-hidden="true" />
                   <span className="product-line" aria-hidden="true" />
                 </button>
@@ -590,6 +640,7 @@ export default function Home() {
               onClick={() => {
                 setCategory("all");
                 setAvailability("all");
+                setVerification("all");
               }}
             >
               {t.reset}
@@ -676,10 +727,10 @@ export default function Home() {
           <div className="product-modal-visual">
             <div className="product-media-tabs" role="tablist" aria-label={t.productDetails}>
               <button className={productMedia === "photos" ? "active" : ""} type="button" onClick={() => setProductMedia("photos")}>{t.photos}</button>
-              <button className={productMedia === "video" ? "active" : ""} type="button" onClick={() => setProductMedia("video")}>{t.certifiedVideo}</button>
+              <button className={productMedia === "video" ? "active" : ""} type="button" onClick={() => setProductMedia("video")}>{selectedProduct.verificationStatus === "verified" ? t.certifiedVideo : t.video}</button>
               <button className={productMedia === "spin" ? "active" : ""} type="button" onClick={() => setProductMedia("spin")}>{t.spin360}</button>
             </div>
-            {productMedia === "video" ? selectedProduct.video ? <video className="product-video" src={selectedProduct.video} controls playsInline preload="metadata" /> : <div className="product-media-empty"><span>QI</span><b>{t.certifiedVideo}</b><p>{t.videoPending}</p></div> : productMedia === "spin" ? selectedProduct.spin360.length > 1 ? <>
+            {productMedia === "video" ? selectedProduct.video ? <video className="product-video" src={selectedProduct.video} controls playsInline preload="metadata" /> : <div className="product-media-empty"><span>{selectedProduct.verificationStatus === "verified" ? "QI" : "▶"}</span><b>{selectedProduct.verificationStatus === "verified" ? t.certifiedVideo : t.video}</b><p>{selectedProduct.verificationStatus === "verified" ? t.videoPending : t.standardVideoPending}</p></div> : productMedia === "spin" ? selectedProduct.spin360.length > 1 ? <>
               <div className="product-spin" role="img" aria-label={`${selectedProduct.name} ${t.spin360}`} style={{ backgroundImage: `url(${selectedProduct.spin360[spinFrame]})` }} onPointerDown={(event) => { spinDrag.current = { x: event.clientX, frame: spinFrame }; event.currentTarget.setPointerCapture(event.pointerId); }} onPointerMove={(event) => { if (!spinDrag.current) return; const movement = Math.round((event.clientX - spinDrag.current.x) / 14); const count = selectedProduct.spin360.length; setSpinFrame((spinDrag.current.frame - movement % count + count) % count); }} onPointerUp={(event) => { spinDrag.current = null; event.currentTarget.releasePointerCapture(event.pointerId); }} />
               <p className="spin-help">↔ {t.spinHelp}</p>
               <input className="spin-range" type="range" min="0" max={selectedProduct.spin360.length - 1} value={spinFrame} onChange={(event) => setSpinFrame(Number(event.target.value))} aria-label={t.spin360} />

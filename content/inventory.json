@@ -1,6 +1,6 @@
 {
-  "version": 1,
-  "updatedAt": "2026-07-20T00:00:00+03:00",
+  "version": 2,
+  "updatedAt": "2026-09-14T00:00:00+03:00",
   "heroAnimation": {
     "enabled": false,
     "poster": "",
@@ -18,6 +18,7 @@
       "price": 1899,
       "currency": "MDL",
       "availability": "stock",
+      "verificationStatus": "verified",
       "stockQuantity": 5,
       "art": "jacket",
       "tone": "graphite",
@@ -40,6 +41,7 @@
       "price": 1349,
       "currency": "MDL",
       "availability": "stock",
+      "verificationStatus": "verified",
       "stockQuantity": 8,
       "art": "trousers",
       "tone": "silver",
@@ -62,6 +64,7 @@
       "price": 2499,
       "currency": "MDL",
       "availability": "preorder",
+      "verificationStatus": "verified",
       "stockQuantity": 0,
       "art": "shoe",
       "tone": "chalk",
@@ -84,6 +87,7 @@
       "price": 949,
       "currency": "MDL",
       "availability": "stock",
+      "verificationStatus": "verified",
       "stockQuantity": 12,
       "art": "knit",
       "tone": "chalk",
@@ -106,6 +110,7 @@
       "price": 2199,
       "currency": "MDL",
       "availability": "preorder",
+      "verificationStatus": "verified",
       "stockQuantity": 0,
       "art": "set",
       "tone": "silver",
@@ -128,6 +133,7 @@
       "price": 1199,
       "currency": "MDL",
       "availability": "stock",
+      "verificationStatus": "verified",
       "stockQuantity": 4,
       "art": "vest",
       "tone": "graphite",
@@ -140,6 +146,84 @@
         "enabled": true,
         "name": "Studio Layer Vest",
         "message": "Limited stock available for delivery across Moldova."
+      }
+    },
+    {
+      "id": "shadow-zip-hoodie",
+      "sku": "QI-TOP-007",
+      "image": "",
+      "category": "tops",
+      "price": 1299,
+      "currency": "MDL",
+      "availability": "stock",
+      "verificationStatus": "unverified",
+      "stockQuantity": 7,
+      "art": "knit",
+      "tone": "graphite",
+      "website": {
+        "enabled": true,
+        "name": "Shadow Zip Hoodie",
+        "description": "A relaxed full-zip hoodie with a clean monochrome profile.",
+        "details": "This product is available in the QI catalogue but has not completed QI verification. Product information is based on supplier documentation until inspection is completed.",
+        "materials": "Supplier-listed cotton blend. Composition not independently verified by QI.",
+        "sizes": "S · M · L · XL"
+      },
+      "telegram": {
+        "enabled": true,
+        "name": "Shadow Zip Hoodie",
+        "message": "In stock. This item has not completed QI verification. Ask us for current details and sizing."
+      }
+    },
+    {
+      "id": "wide-utility-denim",
+      "sku": "QI-TRS-008",
+      "image": "",
+      "category": "bottoms",
+      "price": 1599,
+      "currency": "MDL",
+      "availability": "preorder",
+      "verificationStatus": "unverified",
+      "stockQuantity": 0,
+      "art": "trousers",
+      "tone": "chalk",
+      "website": {
+        "enabled": true,
+        "name": "Wide Utility Denim",
+        "description": "Wide-leg utility denim offered through selected preorder.",
+        "details": "This product is available by preorder and has not completed QI verification. Price, availability and supplier information are confirmed before payment.",
+        "materials": "Supplier-listed cotton denim. Composition not independently verified by QI.",
+        "sizes": "28 · 30 · 32 · 34 · 36"
+      },
+      "telegram": {
+        "enabled": true,
+        "name": "Wide Utility Denim",
+        "message": "Selected preorder. Not yet QI verified; price, size and availability are confirmed before payment."
+      }
+    },
+    {
+      "id": "mono-street-runner",
+      "sku": "QI-SHO-009",
+      "image": "",
+      "category": "shoes",
+      "price": 2199,
+      "currency": "MDL",
+      "availability": "stock",
+      "verificationStatus": "unverified",
+      "stockQuantity": 3,
+      "art": "shoe",
+      "tone": "silver",
+      "website": {
+        "enabled": true,
+        "name": "Mono Street Runner",
+        "description": "A low-profile monochrome runner for everyday styling.",
+        "details": "This product is listed without the QI Verified tag because QI verification has not been completed. Supplier product information remains subject to confirmation.",
+        "materials": "Supplier-listed textile and synthetic upper. Composition not independently verified by QI.",
+        "sizes": "36 · 37 · 38 · 39 · 40 · 41 · 42 · 43"
+      },
+      "telegram": {
+        "enabled": true,
+        "name": "Mono Street Runner",
+        "message": "Limited stock. This product is not yet QI verified; contact us for current size details."
       }
     }
   ]

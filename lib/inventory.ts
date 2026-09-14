@@ -2,6 +2,7 @@ import inventoryData from "@/content/inventory.json";
 
 export type Category = "outerwear" | "tops" | "bottoms" | "shoes";
 export type Availability = "stock" | "preorder";
+export type VerificationStatus = "verified" | "unverified";
 export type ProductArt = "jacket" | "trousers" | "shoe" | "knit" | "set" | "vest";
 export type ProductTone = "graphite" | "silver" | "chalk";
 
@@ -25,6 +26,7 @@ export type InventoryProduct = {
   price: number;
   currency: "MDL";
   availability: Availability;
+  verificationStatus: VerificationStatus;
   stockQuantity: number;
   art: ProductArt;
   tone: ProductTone;
@@ -84,6 +86,7 @@ export function getWebsiteProducts() {
       category: product.category,
       price: formatPrice(product.price, product.currency),
       availability: product.availability,
+      verificationStatus: product.verificationStatus,
       stockQuantity: product.stockQuantity,
       art: product.art,
       tone: product.tone,
