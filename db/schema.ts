@@ -1,4 +1,4 @@
-import { integer, sqliteTable, text } from "drizzle-orm/sqlite-core";
+import { integer, real, sqliteTable, text } from "drizzle-orm/sqlite-core";
 
 export const staffAccounts = sqliteTable("staff_accounts", {
   email: text("email").primaryKey(),
@@ -93,4 +93,38 @@ export const resellerEvents = sqliteTable("reseller_events", {
   event: text("event").notNull(),
   actor: text("actor").notNull(),
   createdAt: text("created_at").notNull(),
+});
+
+export const financePurchases = sqliteTable("finance_purchases", {
+  id: text("id").primaryKey(),
+  sku: text("sku").notNull(),
+  productName: text("product_name").notNull(),
+  purchasedOn: text("purchased_on").notNull(),
+  quantity: integer("quantity").notNull(),
+  unitCostMinor: integer("unit_cost_minor").notNull(),
+  currency: text("currency").notNull(),
+  fxRateToMdl: real("fx_rate_to_mdl").notNull(),
+  unitCostMdlMinor: integer("unit_cost_mdl_minor").notNull(),
+  supplier: text("supplier"),
+  reference: text("reference"),
+  notes: text("notes"),
+  actor: text("actor").notNull(),
+  createdAt: text("created_at").notNull(),
+  updatedAt: text("updated_at").notNull(),
+});
+
+export const financeExpenses = sqliteTable("finance_expenses", {
+  id: text("id").primaryKey(),
+  occurredOn: text("occurred_on").notNull(),
+  scope: text("scope", { enum: ["physical", "software", "general"] }).notNull(),
+  category: text("category").notNull(),
+  description: text("description").notNull(),
+  amountMinor: integer("amount_minor").notNull(),
+  currency: text("currency").notNull(),
+  fxRateToMdl: real("fx_rate_to_mdl").notNull(),
+  amountMdlMinor: integer("amount_mdl_minor").notNull(),
+  reference: text("reference"),
+  actor: text("actor").notNull(),
+  createdAt: text("created_at").notNull(),
+  updatedAt: text("updated_at").notNull(),
 });
