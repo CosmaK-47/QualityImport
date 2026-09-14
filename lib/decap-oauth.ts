@@ -1,7 +1,7 @@
 import { env } from "cloudflare:workers";
 
 const SITE_ORIGIN = "https://qi-quality-imports.cosmak-47.chatgpt.site";
-const STATE_COOKIE = "qi_decap_oauth_state";
+const STATE_COOKIE_PREFIX = "qi_decap_oauth_state_";
 const STATE_TTL_SECONDS = 10 * 60;
 
 type GitHubTokenResponse = {
@@ -33,8 +33,16 @@ function randomState(): string {
   return Array.from(bytes, (byte) => byte.toString(16).padStart(2, "0")).join("");
 }
 
-function stateCookie(value: string, maxAge = STATE_TTL_SECONDS): string {
-  return `${STATE_COOKIE}=${encodeURIComponent(value)}; Path=/api/decap; HttpOnly; Secure; SameSite=Lax; Max-Age=${maxAge}`;
+function validState(value: string): boolean {
+  return /^[a-f0-9]{64}$/.test(value);
+}
+
+function stateCookieName(state: string): string {
+  return `${STATE_COOKIE_PREFIX}${state.slice(0, 16)}`;
+}
+
+function stateCookie(state: string, maxAge = STATE_TTL_SECONDS): string {
+  return `${stateCookieName(state)}=${encodeURIComponent(state)}; Path=/api/decap; HttpOnly; Secure; SameSite=Lax; Max-Age=${maxAge}`;
 }
 
 function cookieValue(request: Request, name: string): string {
@@ -78,6 +86,7 @@ function popupResponse(
   status: "success" | "error",
   payload: Record<string, unknown>,
   responseStatus = 200,
+  stateToClear = "",
 ): Response {
   const authorizationMessage = `authorization:github:${status}:${JSON.stringify(payload)}`;
   const title = status === "success" ? "GitHub connected" : "GitHub connection failed";
@@ -114,16 +123,20 @@ function popupResponse(
   </body>
 </html>`;
 
+  const responseHeaders: Record<string, string> = {
+    "cache-control": "no-store",
+    "content-security-policy": "default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; base-uri 'none'; form-action 'none'",
+    "content-type": "text/html; charset=utf-8",
+    "referrer-policy": "no-referrer",
+    "x-content-type-options": "nosniff",
+  };
+  if (validState(stateToClear)) {
+    responseHeaders["set-cookie"] = stateCookie(stateToClear, 0);
+  }
+
   return new Response(html, {
     status: responseStatus,
-    headers: {
-      "cache-control": "no-store",
-      "content-security-policy": "default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; base-uri 'none'; form-action 'none'",
-      "content-type": "text/html; charset=utf-8",
-      "referrer-policy": "no-referrer",
-      "set-cookie": stateCookie("", 0),
-      "x-content-type-options": "nosniff",
-    },
+    headers: responseHeaders,
   });
 }
 
@@ -160,22 +173,24 @@ export function beginGitHubAuthorization(request: Request): Response {
 export async function completeGitHubAuthorization(request: Request): Promise<Response> {
   const requestUrl = new URL(request.url);
   const oauthError = requestUrl.searchParams.get("error");
+  const state = requestUrl.searchParams.get("state") ?? "";
   if (oauthError) {
     return popupResponse("error", {
       message: requestUrl.searchParams.get("error_description") || oauthError,
-    }, 401);
+    }, 401, state);
   }
 
-  const state = requestUrl.searchParams.get("state") ?? "";
-  const expectedState = cookieValue(request, STATE_COOKIE);
+  const expectedState = validState(state)
+    ? cookieValue(request, stateCookieName(state))
+    : "";
   if (!statesMatch(expectedState, state)) {
-    return popupResponse("error", { message: "The OAuth request expired or could not be verified." }, 400);
+    return popupResponse("error", { message: "The OAuth request expired or could not be verified." }, 400, state);
   }
 
   const code = requestUrl.searchParams.get("code") ?? "";
   const { clientId, clientSecret } = githubCredentials();
   if (!code || !clientId || !clientSecret) {
-    return popupResponse("error", { message: "GitHub OAuth is not completely configured." }, 503);
+    return popupResponse("error", { message: "GitHub OAuth is not completely configured." }, 503, state);
   }
 
   try {
@@ -198,7 +213,7 @@ export async function completeGitHubAuthorization(request: Request): Promise<Res
     if (!tokenResponse.ok || !tokenResult.access_token || tokenResult.error) {
       return popupResponse("error", {
         message: tokenResult.error_description || tokenResult.error || "GitHub rejected the authorization request.",
-      }, 401);
+      }, 401, state);
     }
 
     const userResponse = await fetch("https://api.github.com/user", {
@@ -212,14 +227,14 @@ export async function completeGitHubAuthorization(request: Request): Promise<Res
     const user = await userResponse.json() as GitHubUser;
     const login = user.login?.toLowerCase() ?? "";
     if (!userResponse.ok || !allowedGitHubUsers().has(login)) {
-      return popupResponse("error", { message: "This GitHub account is not authorized for QI Admin." }, 403);
+      return popupResponse("error", { message: "This GitHub account is not authorized for QI Admin." }, 403, state);
     }
 
     return popupResponse("success", {
       provider: "github",
       token: tokenResult.access_token,
-    });
+    }, 200, state);
   } catch {
-    return popupResponse("error", { message: "GitHub is temporarily unavailable. Please try again." }, 502);
+    return popupResponse("error", { message: "GitHub is temporarily unavailable. Please try again." }, 502, state);
   }
 }

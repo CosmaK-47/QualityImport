@@ -69,7 +69,8 @@ test("routes Decap GitHub login through the QI OAuth bridge", async () => {
   assert.match(authRoute, /beginGitHubAuthorization/);
   assert.match(callbackRoute, /completeGitHubAuthorization/);
   assert.match(oauthModule, /scope", "public_repo"/);
-  assert.match(oauthModule, /qi_decap_oauth_state/);
+  assert.match(oauthModule, /STATE_COOKIE_PREFIX/);
+  assert.match(oauthModule, /stateCookieName\(state\)/);
   assert.match(oauthModule, /DECAP_GITHUB_ALLOWED_USERS/);
   assert.doesNotMatch(oauthModule, /console\.log/);
 });
