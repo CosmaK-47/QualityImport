@@ -30,5 +30,3 @@ CREATE TABLE `reseller_events` (
 	`created_at` text NOT NULL,
 	FOREIGN KEY (`reseller_id`) REFERENCES `reseller_applications`(`id`) ON UPDATE no action ON DELETE cascade
 );
---> statement-breakpoint
-ALTER TABLE `orders` ADD `customer_language` text;
