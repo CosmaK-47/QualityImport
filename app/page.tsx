@@ -7,7 +7,7 @@ import ResellerApplicationModal from "./reseller-application-modal";
 import ScrollHeroStage from "./scroll-hero-stage";
 
 type Language = "RO" | "RU" | "EN";
-type Category = "all" | "outerwear" | "tops" | "bottoms" | "shoes";
+type Category = "all" | "outerwear" | "tops" | "bottoms" | "shoes" | "accessories";
 type Availability = "all" | "stock" | "preorder";
 type VerificationFilter = "all" | "verified" | "unverified";
 
@@ -38,6 +38,7 @@ const copy = {
     tops: "Topuri",
     bottoms: "Pantaloni",
     shoes: "Încălțăminte",
+    accessories: "Accesorii",
     stockFilter: "În stoc",
     preorderFilter: "Precomandă",
     verificationFilter: "Verificare",
@@ -141,6 +142,7 @@ const copy = {
     tops: "Верх",
     bottoms: "Брюки",
     shoes: "Обувь",
+    accessories: "Аксессуары",
     stockFilter: "В наличии",
     preorderFilter: "Предзаказ",
     verificationFilter: "Проверка",
@@ -244,6 +246,7 @@ const copy = {
     tops: "Tops",
     bottoms: "Trousers",
     shoes: "Shoes",
+    accessories: "Accessories",
     stockFilter: "In stock",
     preorderFilter: "Preorder",
     verificationFilter: "Verification",
@@ -326,7 +329,7 @@ const copy = {
   },
 } as const;
 
-const categoryKeys: Category[] = ["all", "outerwear", "tops", "bottoms", "shoes"];
+const categoryKeys: Category[] = ["all", "outerwear", "tops", "bottoms", "shoes", "accessories"];
 const BAG_STORAGE_KEY = "qi-shopping-bag-v1";
 
 export default function Home() {

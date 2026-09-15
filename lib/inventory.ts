@@ -1,9 +1,9 @@
 import inventoryData from "@/content/inventory.json";
 
-export type Category = "outerwear" | "tops" | "bottoms" | "shoes";
+export type Category = "outerwear" | "tops" | "bottoms" | "shoes" | "accessories";
 export type Availability = "stock" | "preorder";
 export type VerificationStatus = "verified" | "unverified";
-export type ProductArt = "jacket" | "trousers" | "shoe" | "knit" | "set" | "vest";
+export type ProductArt = "jacket" | "trousers" | "shoe" | "knit" | "set" | "vest" | "bag";
 export type ProductTone = "graphite" | "silver" | "chalk";
 
 export type HeroAnimation = {

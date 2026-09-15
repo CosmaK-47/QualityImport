@@ -155,7 +155,7 @@
         "message": "In stock. This item has not completed QI verification. Ask us for current details and sizing."
       },
       "stockQuantity": 3,
-      "art": "knit",
+      "art": "bag",
       "price": 4999,
       "verificationStatus": "unverified",
       "currency": "MDL",
@@ -174,13 +174,13 @@
         "description": "The Goyard Cap-Vert PM is a refined crossbody bag crafted from signature Goyardine canvas with Cervon calfskin trim and palladium-finish hardware. Its compact silhouette features a secure zip closure, a practical exterior pocket and an adjustable shoulder strap for effortless everyday wear.\n",
         "details": "This product is available in the QI catalogue but has not completed QI verification. Product information is based on supplier documentation until inspection is completed.",
         "materials": "Materials\n\nGoyardine canvas, Cervon calfskin trim, cotton lining and palladium-finish hardware.\n\nCare\n\nAvoid contact with water, perfume, cosmetics, oils and abrasive surfaces. Clean gently using a soft, dry cloth without detergents or solvents. Store the bag in its protective dust bag, away from direct light, heat and humidity.\n",
-        "sizes": "S · M · L · XL"
+        "sizes": "One size"
       },
       "id": "goyard-bag-men",
       "availability": "preorder",
       "image": "/uploads/products/screenshot2026-09-12at11.32.28.png",
       "sku": "QI-TOP-007",
-      "category": "tops"
+      "category": "accessories"
     },
     {
       "telegram": {

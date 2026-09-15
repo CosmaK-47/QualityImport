@@ -54,6 +54,9 @@ test("publishes channel-specific inventory with explicit verification states", a
   assert.match(decapConfig, /name: verificationStatus/);
   assert.match(decapConfig, /value: verified/);
   assert.match(decapConfig, /value: unverified/);
+  assert.match(decapConfig, /options: \[jacket, trousers, shoe, knit, set, vest, bag\]/);
+  assert.equal(inventory.products.find((product) => product.id === "goyard-bag-men")?.category, "accessories");
+  assert.equal(inventory.products.find((product) => product.id === "goyard-bag-men")?.art, "bag");
 });
 
 test("routes Decap GitHub login through the QI OAuth bridge", async () => {

@@ -646,6 +646,30 @@ a:focus-visible {
   clip-path: polygon(20% 0, 42% 9%, 58% 9%, 80% 0, 100% 17%, 79% 33%, 76% 100%, 24% 100%, 21% 33%, 0 17%);
 }
 
+.art-bag .product-shape {
+  top: 55%;
+  width: 52%;
+  height: 39%;
+  border-radius: 4% 4% 9% 9%;
+}
+
+.art-bag .product-shape::before {
+  position: absolute;
+  top: -32%;
+  left: 24%;
+  width: 52%;
+  height: 45%;
+  border: 1px solid var(--silver);
+  border-bottom: 0;
+  border-radius: 50% 50% 0 0;
+  content: "";
+}
+
+.art-bag .product-line {
+  top: 55%;
+  bottom: 26%;
+}
+
 .art-set .product-shape { top: 40%; height: 43%; }
 .art-set::after { position: absolute; z-index: 2; bottom: 10%; left: 50%; width: 29%; height: 32%; content: ""; background: #0b0b0c; clip-path: polygon(5% 0, 95% 0, 80% 100%, 56% 100%, 50% 38%, 44% 100%, 20% 100%); transform: translateX(-50%); }
 
