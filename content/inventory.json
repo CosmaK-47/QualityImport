@@ -11,180 +11,188 @@
   },
   "products": [
     {
-      "id": "structured-track-jacket",
-      "sku": "QI-JKT-001",
-      "image": "",
-      "category": "outerwear",
-      "price": 1899,
-      "currency": "MDL",
-      "availability": "stock",
-      "verificationStatus": "verified",
+      "telegram": {
+        "enabled": true,
+        "name": "Structured Track Jacket",
+        "message": "In stock now. Delivery across Moldova in 1–3 days."
+      },
       "stockQuantity": 5,
       "art": "jacket",
+      "price": 1899,
+      "verificationStatus": "verified",
+      "currency": "MDL",
       "tone": "graphite",
       "website": {
         "enabled": true,
         "name": "Structured Track Jacket",
         "description": "Structured outerwear selected for everyday wear."
       },
-      "telegram": {
-        "enabled": true,
-        "name": "Structured Track Jacket",
-        "message": "In stock now. Delivery across Moldova in 1–3 days."
-      }
+      "id": "structured-track-jacket",
+      "availability": "stock",
+      "image": "",
+      "sku": "QI-JKT-001",
+      "category": "outerwear"
     },
     {
-      "id": "studio-cargo-trousers",
-      "sku": "QI-TRS-002",
-      "image": "",
-      "category": "bottoms",
-      "price": 1349,
-      "currency": "MDL",
-      "availability": "stock",
-      "verificationStatus": "verified",
+      "telegram": {
+        "enabled": true,
+        "name": "Studio Cargo Trousers",
+        "message": "Available from stock. Ask us about sizing in Telegram."
+      },
       "stockQuantity": 8,
       "art": "trousers",
+      "price": 1349,
+      "verificationStatus": "verified",
+      "currency": "MDL",
       "tone": "silver",
       "website": {
         "enabled": true,
         "name": "Studio Cargo Trousers",
         "description": "Relaxed cargo trousers with a clean studio silhouette."
       },
-      "telegram": {
-        "enabled": true,
-        "name": "Studio Cargo Trousers",
-        "message": "Available from stock. Ask us about sizing in Telegram."
-      }
+      "id": "studio-cargo-trousers",
+      "availability": "stock",
+      "image": "",
+      "sku": "QI-TRS-002",
+      "category": "bottoms"
     },
     {
-      "id": "court-low-sneakers",
-      "sku": "QI-SHO-003",
-      "image": "",
-      "category": "shoes",
-      "price": 2499,
-      "currency": "MDL",
-      "availability": "preorder",
-      "verificationStatus": "verified",
+      "telegram": {
+        "enabled": true,
+        "name": "Court Low Sneakers",
+        "message": "Selected preorder. We confirm size, price and availability before payment."
+      },
       "stockQuantity": 0,
       "art": "shoe",
+      "price": 2499,
+      "verificationStatus": "verified",
+      "currency": "MDL",
       "tone": "chalk",
       "website": {
         "enabled": true,
         "name": "Court Low Sneakers",
         "description": "Low-profile court sneakers available through selected preorder."
       },
-      "telegram": {
-        "enabled": true,
-        "name": "Court Low Sneakers",
-        "message": "Selected preorder. We confirm size, price and availability before payment."
-      }
+      "id": "court-low-sneakers",
+      "availability": "preorder",
+      "image": "",
+      "sku": "QI-SHO-003",
+      "category": "shoes"
     },
     {
-      "id": "noir-rib-knit",
-      "sku": "QI-TOP-004",
-      "image": "",
-      "category": "tops",
-      "price": 949,
-      "currency": "MDL",
-      "availability": "stock",
-      "verificationStatus": "verified",
+      "telegram": {
+        "enabled": true,
+        "name": "Noir Rib Knit",
+        "message": "In stock. Message us to confirm your size."
+      },
       "stockQuantity": 12,
       "art": "knit",
+      "price": 949,
+      "verificationStatus": "verified",
+      "currency": "MDL",
       "tone": "chalk",
       "website": {
         "enabled": true,
         "name": "Noir Rib Knit",
         "description": "A refined rib knit for versatile layering."
       },
-      "telegram": {
-        "enabled": true,
-        "name": "Noir Rib Knit",
-        "message": "In stock. Message us to confirm your size."
-      }
+      "id": "noir-rib-knit",
+      "availability": "stock",
+      "image": "",
+      "sku": "QI-TOP-004",
+      "category": "tops"
     },
     {
-      "id": "form-zip-set",
-      "sku": "QI-SET-005",
-      "image": "",
-      "category": "outerwear",
-      "price": 2199,
-      "currency": "MDL",
-      "availability": "preorder",
-      "verificationStatus": "verified",
+      "telegram": {
+        "enabled": true,
+        "name": "Form Zip Set",
+        "message": "Available by preorder after price and availability confirmation."
+      },
       "stockQuantity": 0,
       "art": "set",
+      "price": 2199,
+      "verificationStatus": "verified",
+      "currency": "MDL",
       "tone": "silver",
       "website": {
         "enabled": true,
         "name": "Form Zip Set",
         "description": "A coordinated zip set sourced through selected preorder."
       },
-      "telegram": {
-        "enabled": true,
-        "name": "Form Zip Set",
-        "message": "Available by preorder after price and availability confirmation."
-      }
+      "id": "form-zip-set",
+      "availability": "preorder",
+      "image": "",
+      "sku": "QI-SET-005",
+      "category": "outerwear"
     },
     {
-      "id": "studio-layer-vest",
-      "sku": "QI-TOP-006",
-      "image": "",
-      "category": "tops",
-      "price": 1199,
-      "currency": "MDL",
-      "availability": "stock",
-      "verificationStatus": "verified",
+      "telegram": {
+        "enabled": true,
+        "name": "Studio Layer Vest",
+        "message": "Limited stock available for delivery across Moldova."
+      },
       "stockQuantity": 4,
       "art": "vest",
+      "price": 1199,
+      "verificationStatus": "verified",
+      "currency": "MDL",
       "tone": "graphite",
       "website": {
         "enabled": true,
         "name": "Studio Layer Vest",
         "description": "A structured vest designed for modern layering."
       },
-      "telegram": {
-        "enabled": true,
-        "name": "Studio Layer Vest",
-        "message": "Limited stock available for delivery across Moldova."
-      }
+      "id": "studio-layer-vest",
+      "availability": "stock",
+      "image": "",
+      "sku": "QI-TOP-006",
+      "category": "tops"
     },
     {
-      "id": "shadow-zip-hoodie",
-      "sku": "QI-TOP-007",
-      "image": "",
-      "category": "tops",
-      "price": 1299,
-      "currency": "MDL",
-      "availability": "stock",
-      "verificationStatus": "unverified",
-      "stockQuantity": 7,
+      "telegram": {
+        "enabled": true,
+        "name": "Goyard Cap-Vert PM Bag",
+        "message": "In stock. This item has not completed QI verification. Ask us for current details and sizing."
+      },
+      "stockQuantity": 3,
       "art": "knit",
+      "price": 4999,
+      "verificationStatus": "unverified",
+      "currency": "MDL",
       "tone": "graphite",
+      "gallery": [
+        "/uploads/products/screenshot2026-09-12at11.34.06.png",
+        "/uploads/products/screenshot2026-09-12at11.41.06.png",
+        "/uploads/products/screenshot2026-09-12at11.36.25.png",
+        "/uploads/products/screenshot2026-09-12at11.35.33.png",
+        "/uploads/products/screenshot2026-09-12at11.38.19.png",
+        "/uploads/products/screenshot2026-09-12at11.39.14.png"
+      ],
       "website": {
         "enabled": true,
-        "name": "Shadow Zip Hoodie",
-        "description": "A relaxed full-zip hoodie with a clean monochrome profile.",
+        "name": "Goyard Cap-Vert PM Bag",
+        "description": "The Goyard Cap-Vert PM is a refined crossbody bag crafted from signature Goyardine canvas with Cervon calfskin trim and palladium-finish hardware. Its compact silhouette features a secure zip closure, a practical exterior pocket and an adjustable shoulder strap for effortless everyday wear.\n",
         "details": "This product is available in the QI catalogue but has not completed QI verification. Product information is based on supplier documentation until inspection is completed.",
-        "materials": "Supplier-listed cotton blend. Composition not independently verified by QI.",
+        "materials": "Materials\n\nGoyardine canvas, Cervon calfskin trim, cotton lining and palladium-finish hardware.\n\nCare\n\nAvoid contact with water, perfume, cosmetics, oils and abrasive surfaces. Clean gently using a soft, dry cloth without detergents or solvents. Store the bag in its protective dust bag, away from direct light, heat and humidity.\n",
         "sizes": "S · M · L · XL"
       },
-      "telegram": {
-        "enabled": true,
-        "name": "Shadow Zip Hoodie",
-        "message": "In stock. This item has not completed QI verification. Ask us for current details and sizing."
-      }
+      "id": "goyard-bag-men",
+      "availability": "preorder",
+      "image": "/uploads/products/screenshot2026-09-12at11.32.28.png",
+      "sku": "QI-TOP-007",
+      "category": "tops"
     },
     {
-      "id": "wide-utility-denim",
-      "sku": "QI-TRS-008",
-      "image": "",
-      "category": "bottoms",
-      "price": 1599,
-      "currency": "MDL",
-      "availability": "preorder",
-      "verificationStatus": "unverified",
+      "telegram": {
+        "enabled": true,
+        "name": "Wide Utility Denim",
+        "message": "Selected preorder. Not yet QI verified; price, size and availability are confirmed before payment."
+      },
       "stockQuantity": 0,
       "art": "trousers",
+      "price": 1599,
+      "verificationStatus": "unverified",
+      "currency": "MDL",
       "tone": "chalk",
       "website": {
         "enabled": true,
@@ -194,23 +202,23 @@
         "materials": "Supplier-listed cotton denim. Composition not independently verified by QI.",
         "sizes": "28 · 30 · 32 · 34 · 36"
       },
-      "telegram": {
-        "enabled": true,
-        "name": "Wide Utility Denim",
-        "message": "Selected preorder. Not yet QI verified; price, size and availability are confirmed before payment."
-      }
+      "id": "wide-utility-denim",
+      "availability": "preorder",
+      "image": "",
+      "sku": "QI-TRS-008",
+      "category": "bottoms"
     },
     {
-      "id": "mono-street-runner",
-      "sku": "QI-SHO-009",
-      "image": "",
-      "category": "shoes",
-      "price": 2199,
-      "currency": "MDL",
-      "availability": "stock",
-      "verificationStatus": "unverified",
+      "telegram": {
+        "enabled": true,
+        "name": "Mono Street Runner",
+        "message": "Limited stock. This product is not yet QI verified; contact us for current size details."
+      },
       "stockQuantity": 3,
       "art": "shoe",
+      "price": 2199,
+      "verificationStatus": "unverified",
+      "currency": "MDL",
       "tone": "silver",
       "website": {
         "enabled": true,
@@ -220,11 +228,11 @@
         "materials": "Supplier-listed textile and synthetic upper. Composition not independently verified by QI.",
         "sizes": "36 · 37 · 38 · 39 · 40 · 41 · 42 · 43"
       },
-      "telegram": {
-        "enabled": true,
-        "name": "Mono Street Runner",
-        "message": "Limited stock. This product is not yet QI verified; contact us for current size details."
-      }
+      "id": "mono-street-runner",
+      "availability": "stock",
+      "image": "",
+      "sku": "QI-SHO-009",
+      "category": "shoes"
     }
   ]
 }
